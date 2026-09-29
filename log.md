@@ -4,6 +4,29 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Demo directed with no-slop-motion's rules
+
+> "https://github.com/ferndesk/no-slop-motion - can u use for the demo"
+
+That repo is an agent skill for making launch *films* (MP4): ten sign-off gates, Cartesia voice, Suno music, HyperFrames render. Our demo is a live loop of the real panel, so we used its **motion rules and its slop linter**, not the film pipeline.
+
+- **Actions finish:** a cursor travels to the Sift icon and presses it before the panel opens, and presses "Reveal email" before the email appears. Targets are measured from the DOM every loop.
+- **No hard pops:** every part of the panel (credit bar, header, fit, why now, persona, contacts, email) rises in as the lookup produces it. Checks, signals and contacts arrive one by one. The fit strip fills left to right as the first "hit", followed by 1.5s of air.
+- **One idea at a time:** the fake page dims to 40% while the panel works.
+- **Eases:** power3.out for arrivals, power2.inOut for the cursor, power2.in for exits; the panel opens on expo.out. No linear moves, no overshoot.
+- **Type:** the headline enters blur to sharp (14px → 0, y 24 → 0); the lines under it rise after it in order.
+- **Robustness:** the loop pauses while the tab is hidden. With reduced motion there's no cursor and no animation, just the finished panel. All motion styles are scoped to the demo; the extension itself is unchanged.
+- **Linter** (`scripts/qa/lint-slop.ts` from the repo, run on `site/` and `src/`): it found the pulsing glow ring on the demo's icon (removed; the cursor click replaces it) and the field focus line drawn with `box-shadow` (now a 2px border). Both now report 0 errors and 0 warnings.
+- **Bug caught by the click check:** the icon's pressed look was added to the element directly, and React's re-render in the same moment wiped it, so the click never showed. It's now React state.
+- **Verified:**
+  - both presses land (cursor tip inside the icon and inside "Reveal email" at the moment of pressing), on desktop and at 390px;
+  - a 28-frame contact sheet of one loop reviewed;
+  - the fit block's entrance animation is running;
+  - reduced motion shows the final panel with the cursor hidden;
+  - no page errors, no horizontal overflow.
+
+---
+
 ## 2026-09-29 — Site redeployed; auto-deploy from GitHub
 
 - Production redeployed with full-URL `og:image`, `og:url` and canonical tags, checked on the live page (`og.png` served as `image/png`).

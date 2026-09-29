@@ -99,7 +99,8 @@ input, textarea, select {
 input, textarea { width: 100%; }
 select { padding: 4px 18px 4px 0; cursor: pointer; }
 input:hover, textarea:hover, select:hover { border-bottom-color: var(--muted); }
-input:focus, textarea:focus, select:focus { outline: none; border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
+/* Focus: the line thickens (2px) without moving the text. */
+input:focus, textarea:focus, select:focus { outline: none; border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
 input::placeholder, textarea::placeholder { color: #a5a8ac; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 textarea { resize: vertical; min-height: 44px; line-height: 1.5; }
