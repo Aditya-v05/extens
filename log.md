@@ -4,6 +4,36 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing: real screen recording replaces the scripted demo (branch `site-redesign`)
+
+> "can we use this for the video instead like edit or do changes on these maybe this might look better" (a 44 s screen recording of Sift on usepylon.com)
+
+- **The edit** (15.5 s loop, no audio, made with ffmpeg):
+  1. 1.0–3.9 s: the click on the Sift icon and the panel loading;
+  2. a short fade across Chrome going fullscreen;
+  3. 4.3–14.0 s: Pylon at 82% Strong fit, scrolling through why now, and revealing the best contact's email;
+  4. 22.0–25.6 s: back at the top, Save becomes Saved.
+
+  The Settings part (28–43 s) was left out.
+- **Privacy in the edit:**
+  - the revealed email of a real person (Pylon's Head of Customer Success) is blurred for as long as it is on screen;
+  - Chrome's "Relaunch to update", "Ask Gemini" and a personal bookmark are painted over;
+  - the macOS menu bar is cropped off;
+  - the API keys never appear (Settings was cut, and they were masked anyway);
+  - the raw `.mov` stays local: `*.mov` is added to `.gitignore`.
+- **Two cuts:**
+  - `site/public/demo.mp4`: the full window, 1600×1000, 815 KB;
+  - `site/public/demo-m.mp4`: cropped to the panel for phones, 540×992, 519 KB;
+  - each has a poster frame. The page picks one by screen width. It autoplays muted and loops inline; with reduced motion it shows the poster with controls instead.
+- **Code:** `Demo.tsx` (the scripted demo) and its CSS are removed. The section now reads "A real lookup, recorded / One click on their homepage. *The answer beside it.*"
+- **Verified:**
+  - the video plays at 1440 and 390 px (readyState 4, playing);
+  - frames checked for the blur and the covered buttons;
+  - no page errors; reveals fire;
+  - 123 tests, `wxt build` and smoke pass.
+
+---
+
 ## 2026-09-30 — Sift this page is always there
 
 > "no resift button ?" (screenshot: panel showing Fieldguide while the tab was on Pylon)

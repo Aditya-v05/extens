@@ -3,7 +3,6 @@ import { ContactPicker } from '@/components/ContactPicker';
 import { FitCard, ProfileCard, WhyNowCard } from '@/entrypoints/sidepanel/App';
 import type { LookupResult } from '@/lib/types';
 import icon48 from '../public/icon/48.png';
-import { Demo } from './Demo';
 import { SlatWord } from './SlatWord';
 import { acme, acmeRevealed } from './demo-data';
 
@@ -42,8 +41,9 @@ export default function Landing() {
       <main id="top">
         <Hero />
         <section id="demo" className="l-demo-wrap l-wrap" data-reveal>
-          <Eyebrow label="Watch it read a homepage" />
-          <Demo />
+          <Eyebrow label="A real lookup, recorded" />
+          <h2 className="l-demo-title">One click on their homepage. <em>The answer beside it.</em></h2>
+          <DemoVideo />
         </section>
         <Answers />
         <After />
@@ -97,6 +97,32 @@ function Nav() {
       </div>
       <span className="l-progress" ref={line} aria-hidden />
     </header>
+  );
+}
+
+// ---------- demo: a real screen recording (usepylon.com), trimmed; the revealed email is blurred ----------
+
+function DemoVideo() {
+  // Autoplay only when motion is welcome; otherwise show the poster with controls.
+  const [still] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Phones get a cut cropped to the panel, where the answer is; the full window would be too small to read.
+  const [phone] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+  return (
+    <div className={`l-video ${phone ? 'phone' : ''}`}>
+      <video
+        src={phone ? '/demo-m.mp4' : '/demo.mp4'}
+        poster={phone ? '/demo-m-poster.jpg' : '/demo-poster.jpg'}
+        width={phone ? 540 : 1600}
+        height={phone ? 992 : 1000}
+        muted
+        loop
+        playsInline
+        autoPlay={!still}
+        controls={still}
+        preload="metadata"
+        aria-label="Clicking the Sift icon on usepylon.com: the side panel shows an 82% fit, reasons to reach out now, and the best contacts"
+      />
+    </div>
   );
 }
 

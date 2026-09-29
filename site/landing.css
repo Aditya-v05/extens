@@ -121,57 +121,15 @@ main p { line-height: 1.6; }
 .l-slatword { position: absolute; inset: 0; z-index: 0; animation: l-fade 1.4s var(--ease-out) 0.3s both; }
 .l-slatword canvas { display: block; }
 
-/* ---------- demo ---------- */
-.l-demo-wrap { padding-top: 110px; }
+/* ---------- demo: the real recording, in a quiet frame ---------- */
+.l-demo-wrap { padding-top: 110px; text-align: center; }
 .l-demo-wrap .l-eyebrow { justify-content: center; }
-.l-demo-wrap .l-demo { border-radius: 18px; overflow: hidden; border: 1px solid var(--hair); box-shadow: 0 2px 4px rgba(15, 46, 44, 0.05), 0 40px 80px -30px rgba(15, 46, 44, 0.35); }
-/* Demo (Demo.tsx): a quiet browser with the real side panel sliding in. */
-.l-demo { position: relative; background: var(--surface); }
-.l-chrome { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
-.l-dots { display: flex; gap: 6px; }
-.l-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
-.l-url { flex: 1; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); padding: 2px 0; max-width: 420px; }
-.l-ext { margin-left: auto; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; transition: background 0.3s var(--ease-out), transform 0.12s var(--ease-out); }
-.l-ext.on { background: var(--accent-soft); }
-.l-ext.l-pressed { transform: scale(0.9); background: var(--border); }
-.l-cursor { position: absolute; top: 0; left: 0; z-index: 5; opacity: 0; pointer-events: none; will-change: transform; }
-.l-cursor svg { display: block; transform-origin: 1px 1px; transition: transform 0.08s var(--ease-out); }
-.l-cursor.down svg { transform: scale(0.88); }
-.l-panel-body button.l-pressed { transform: translateY(1px); color: #1f4450; }
-.l-viewport { display: flex; height: 640px; overflow: hidden; background: var(--bg); }
-.l-site { flex: 1; min-width: 0; padding: 26px 40px; color: var(--muted); transition: opacity 0.5s var(--ease-out); }
-.l-viewport.focus .l-site { opacity: 0.4; }
-.l-site-nav { display: flex; gap: 22px; font-size: 13px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-.l-site-nav strong { color: var(--text); margin-right: 12px; }
-.l-site-hero { padding: 64px 0 40px; max-width: 460px; }
-.l-site-title { font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); font-weight: 450; }
-.l-site-bar { height: 9px; background: var(--border); border-radius: 5px; margin-top: 18px; }
-.l-site-bar.w80 { width: 80%; }
-.l-site-bar.w60 { width: 60%; margin-top: 10px; }
-.l-site-cta { display: inline-block; margin-top: 28px; font-size: 14px; color: var(--text); border-bottom: 2px solid var(--text); padding-bottom: 2px; }
-.l-site-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.l-site-grid div { height: 110px; border-top: 1px solid var(--border); }
-.l-panel { width: 0; flex-shrink: 0; overflow: hidden; border-left: 1px solid var(--border-strong); background: var(--bg); transition: width 0.35s var(--ease-in); }
-.l-panel.open { width: 400px; transition: width 0.55s var(--ease-expo); }
-.l-panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--border); background: var(--bg); color: var(--text); }
-.l-panel .l-panel-head, .l-panel-body { width: 400px; }
-.l-panel-body { height: calc(100% - 38px); overflow: hidden; }
-.l-panel-body .panel { min-height: 0; }
-.l-panel-body :is(.credits, .company, .fit, .fit-why, .section, .persona, .contact, .email, .notice, .skeleton, .reveal-result, .profile-card) { animation: l-rise 0.5s var(--ease-out) both; }
-.l-panel-body :is(.checks, .signals) > li { animation: l-rise 0.45s var(--ease-out) both; }
-.l-panel-body :is(.checks, .signals) > li:nth-child(2) { animation-delay: 70ms; }
-.l-panel-body :is(.checks, .signals) > li:nth-child(3) { animation-delay: 140ms; }
-.l-panel-body :is(.checks, .signals) > li:nth-child(4) { animation-delay: 210ms; }
-.l-panel-body :is(.checks, .signals) > li:nth-child(5) { animation-delay: 280ms; }
-.l-panel-body .contact-list > :nth-child(3) { animation-delay: 80ms; }
-.l-panel-body .contact-list > :nth-child(4) { animation-delay: 160ms; }
-.l-panel-body .contact-list > :nth-child(5) { animation-delay: 240ms; }
-@keyframes l-fill { from { transform: scaleX(0); } }
-.l-panel-body .seg { transform-origin: left center; animation: l-fill 0.6s var(--ease-expo) both; }
-.l-panel-body .seg:nth-child(1) { animation-delay: 150ms; }
-.l-panel-body .seg:nth-child(2) { animation-delay: 240ms; }
-.l-panel-body .seg:nth-child(3) { animation-delay: 330ms; }
-.l-panel-body .seg:nth-child(4) { animation-delay: 420ms; }
+.l-demo-title { max-width: 18em; margin: 0 auto 40px !important; text-wrap: balance; }
+.l-video { border-radius: 16px; overflow: hidden; background: #0b1c1e; border: 1px solid var(--hair); line-height: 0;
+  box-shadow: 0 2px 4px rgba(15, 46, 44, 0.05), 0 40px 80px -30px rgba(15, 46, 44, 0.35); }
+.l-video video { width: 100%; height: auto; display: block; }
+.l-video.phone { max-width: 420px; margin: 0 auto; }
+
 /* ---------- the four answers ---------- */
 .l-answers { padding-top: 140px; }
 .l-section-head { max-width: 720px; margin: 0 auto 30px; text-align: center; }
@@ -305,9 +263,8 @@ main p { line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .l-panel, .l-panel.open, .l-ext, .l-site, .l-btn, .l-ui, .l-tile, .l-cost { transition: none; }
-  .l-hero *, .l-nav, .l-panel-body *, .l-diagram *, .l-fx { animation: none !important; }
-  .l-cursor { display: none; }
+  .l-btn, .l-ui, .l-tile, .l-cost { transition: none; }
+  .l-hero *, .l-nav, .l-diagram *, .l-fx { animation: none !important; }
 }
 
 /* ---------- narrow screens ---------- */
@@ -318,9 +275,6 @@ main p { line-height: 1.6; }
   .l-hero { height: auto; min-height: 0; padding: 112px 16px 250px; }
     .l-maker { grid-template-columns: auto 1fr; }
   .l-maker-links { grid-column: 1 / -1; }
-  .l-site { display: none; }
-  .l-panel, .l-panel.open { width: 100%; border-left: none; }
-  .l-panel .l-panel-head, .l-panel-body { width: 100%; }
   .l-answer, .l-after, .l-privacy-in, .l-faq, .l-footer-top, .l-costs { grid-template-columns: 1fr; gap: 32px; }
   .l-answer.flip .l-answer-copy { order: 0; }
   .l-stagecard { padding: 24px 16px; }
