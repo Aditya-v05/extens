@@ -52,10 +52,11 @@ export default function App() {
   return (
     <main className="panel">
       {view.status !== 'needs_setup' && <CreditBar credits={credits} onSettings={openSettings} />}
-      {switched && shown && (
-        <div className="switched row spread small">
-          <span className="muted">This tab has changed. Still showing {shown}.</span>
-          <SiftThisPage windowId={windowId} className="link small primary" />
+      {/* Always there when a result is showing, so the tab you're on is one click away. */}
+      {shown && (
+        <div className={`switched row spread small ${switched ? 'changed' : ''}`}>
+          <span className="muted">{switched ? `This tab has changed. Still showing ${shown}.` : `Showing ${shown}`}</span>
+          <SiftThisPage windowId={windowId} className={switched ? 'link small primary' : 'link small'} />
         </div>
       )}
       <Body view={view} windowId={windowId} lookup={lookup} cost={cost} />
@@ -74,9 +75,7 @@ function viewSubject(view: ViewState): string | null {
       return view.domain;
     case 'profile_no_company':
       return contactName(view.person);
-    case 'not_company':
-      return 'the previous page';
-    default:
+    default: // idle, setup and not-a-company pages carry their own Sift this page button
       return null;
   }
 }

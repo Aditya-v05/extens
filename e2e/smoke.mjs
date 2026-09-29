@@ -159,12 +159,13 @@ const setViewTab = (tabId) => panel.evaluate(async (tabId) => {
 await setViewTab(otherTab);
 await panel.bringToFront();
 await panel.waitForTimeout(300);
-check(await panel.locator('.switched').isVisible() && (await panel.locator('.switched').innerText()).includes('Still showing gorgias.com'),
-  'after a tab switch the panel offers Sift this page');
+check(await panel.locator('.switched.changed').isVisible() && (await panel.locator('.switched').innerText()).includes('Still showing gorgias.com'),
+  'after a tab switch the panel says so and offers Sift this page');
 await panel.screenshot({ path: `${OUT}/panel-switched.png` });
 await setViewTab(panelTab);
 await panel.waitForTimeout(300);
-check(await panel.locator('.switched').count() === 0, 'the offer goes away when the result is for the active tab');
+check(await panel.locator('.switched.changed').count() === 0 && (await panel.locator('.switched').innerText()).includes('Showing gorgias.com'),
+  'on the result\'s own tab the line is calm but Sift this page is still there');
 const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
 check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
 const text = await panel.evaluate(() => document.body.innerText);

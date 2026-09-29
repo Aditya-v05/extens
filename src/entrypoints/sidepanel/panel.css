@@ -56,6 +56,7 @@ button.saved:hover { color: var(--text); }
 .profile-card .email { gap: 12px; }
 .profile-card .email .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 
-/* Shown when the active tab is no longer the one the result came from. A line, not a box. */
+/* Above every result: what the panel shows, and Sift this page. Stronger once the tab has changed. A line, not a box. */
 .switched { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .switched .muted { min-width: 0; }
+.switched.changed .muted { color: var(--text); }

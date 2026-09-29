@@ -4,6 +4,20 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Sift this page is always there
+
+> "no resift button ?" (screenshot: panel showing Fieldguide while the tab was on Pylon)
+
+- **Why it was missing:** the line only appeared once the panel knew which tab its result came from. A result made before the update, or from a typed domain or My Accounts, had no recorded tab, so the panel never offered the button.
+- **Fix:** every result now has a line above it, "Showing fieldguide.com", with **Sift this page**. When the active tab is no longer the result's own, the line changes to "This tab has changed. Still showing fieldguide.com." and gets stronger. Empty and not-a-company pages keep their own single button.
+- **Verified:**
+  - the smoke test checks both states and that there is only one button on not-a-company pages;
+  - 31 smoke checks, 123 tests and the build pass;
+  - screenshot `e2e/screenshots/panel-linear.png`.
+- **To try it:** reload the unpacked extension at chrome://extensions.
+
+---
+
 ## 2026-09-30 — Landing: slat cards across the whole hero (branch `site-redesign`)
 
 > "we can have the cards all over actually and size the sift text in the cards a bit up" (their screenshot, on a shorter screen, had SIFT cut off at the bottom)
