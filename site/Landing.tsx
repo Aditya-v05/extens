@@ -101,8 +101,13 @@ function Nav() {
 
 // ---------- hero: the vortex, big and centred; the headline under it ----------
 
-/** The selection point: where the few worth your time end up. */
-const Core = () => <div className="l-core" aria-hidden />;
+/** The outline wordmark behind the swirl, and the selection point where the few worth your time end up. */
+const Core = () => (
+  <>
+    <div className="l-wordmark" aria-hidden>SIFT</div>
+    <div className="l-core" aria-hidden />
+  </>
+);
 
 function Hero() {
   return (

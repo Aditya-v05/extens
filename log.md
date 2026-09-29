@@ -4,6 +4,19 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing v4.2: outline wordmark behind the swirl (branch `site-redesign`)
+
+> "can we incorporate this part into the hero section somehow i really like it" (the outline SIFT wordmark from v3)
+
+- **What changed:** the giant outline "SIFT" (1 px mint stroke at 16%) is back. It sits behind the vortex, centred on the selection point (the same `--vy` the canvas uses), so the particles sweep across the letters. The layers, back to front: wordmark, canvas, selection point. On phones it is 36vw wide.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - no overflow or page errors;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
 ## 2026-09-30 — Landing v4.1: quieter hero, maker strip in the footer (branch `site-redesign`)
 
 > "i dont want those lines/callouts at all - and i am not sure about the center logo also itd be cool to know that i have created this so a contact part at the footer would be cool as well"
