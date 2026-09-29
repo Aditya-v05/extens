@@ -4,6 +4,48 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Fit score follows your requirements; white Scandinavian UI
+
+First feedback from using the real extension:
+
+> "no emoji emojis suck - use white scandinavian styel for the ui - also you told its a strong fit but its a partial fit with 53% but 3 of my requiremtnes are met"
+
+### Fit score
+- **Problem:** the headline was only Jev's holistic judgment. The checklist sat beside it but never counted. Real Gorgias lookup: 3 ticks, "53%, Partial fit". Two details made it worse:
+  - 520 employees against a 500 cap was a hard fail.
+  - "Large support teams" at p = 0.50 showed as a tick although Jev couldn't tell.
+- **Now:**
+  - Each check has a **state** (met / near miss / unsure / not met / no data) and a **credit**.
+  - Near miss = headcount within 10% outside a limit, worth 0.5.
+  - Unsure = Jev 0.35–0.65.
+  - Score = **75% requirements + 25% overall judgment** (`combineFit` in `src/lib/mapping.ts`).
+- **Gorgias:** 53 → **69**, shown as "2 of 4 met, 1 near miss, 1 unsure. Overall judgment 53."
+- **Old results** (cache, saved accounts, an open panel) are rebuilt on display by `upgradeFit`.
+  - The old linear.app result goes 35 → 69, since it meets 3 of 4.
+  - My Accounts re-ranks to Linear 68, Gorgias 59, Intercom 49.
+- **Correction:** my earlier "gorgias.com: strong fit" came from the made-up sample data used for screenshots (82%), not a real lookup. The sample data now mirrors the real Gorgias result.
+
+### Design
+- **No emoji or symbol glyphs anywhere.**
+  - Signal icons are gone.
+  - ✓/✗ became thin SVG line icons, one per state (`src/components/Icon.tsx`).
+  - Star Save is now a Save / Saved button.
+  - Arrows after links are gone, middle-dot separators became commas or parentheses, and the settings sections lost their numbers.
+- **White Scandinavian look** (`src/components/styles.css`):
+  - Palette: white, birch surface, frost hairlines, granite text, one fjord-blue accent, and muted moss / ochre / lingon for status.
+  - Always light, even in OS dark mode.
+  - Font: Schibsted Grotesk (Norwegian), bundled with the extension, so nothing is fetched.
+  - Sentence-case headings; sections separated by space and hairlines instead of stacked cards.
+- **The one loud element:** a large, light fit number with a **requirement strip** under it, one segment per check coloured by state.
+- **Fixed:** the credit bar never drew on My Accounts (its styles only lived in the panel's CSS).
+
+**Verified:**
+- 79 unit tests, including the real Gorgias case, near-miss bounds, and upgrading old results.
+- `npm run smoke` 8/8. New checks: the panel stays white with the OS in dark mode, no emoji or symbol glyphs in the panel, and the new ranking.
+- Screenshots reviewed for the panel, My Accounts and Settings.
+
+---
+
 ## 2026-09-29 — My Accounts
 
 A full-page list of saved and recently viewed companies. Ranked, filterable, with status and notes.

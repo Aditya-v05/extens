@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { CreditBar } from '@/components/CreditBar';
 import { ago, pct } from '@/components/format';
+import { RequirementStrip, StateIcon } from '@/components/Icon';
+import { checkState, checksSummary, upgradeFit } from '@/lib/mapping';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
@@ -133,7 +135,7 @@ function DomainInput({ onSubmit, cost }: { onSubmit: (domain: string) => void; c
       }}
     >
       <input placeholder="acme.com" value={value} onChange={(e) => setValue(e.target.value)} />
-      <button type="submit" disabled={!domain} title={`Uncached lookups cost ${cost} Apollo credits`}>Look up · {cost} cr</button>
+      <button type="submit" disabled={!domain} title={`Uncached lookups cost ${cost} Apollo credits`}>Look up ({cost} cr)</button>
     </form>
   );
 }
@@ -153,17 +155,19 @@ interface ResultProps {
 function ResultView({ domain, result, loadingStage, cached, windowId, lookup, cost }: ResultProps) {
   const loading = loadingStage !== undefined;
   if (!result) return <CompanySkeleton domain={domain} />;
-  const { company, fit, persona, contacts } = result;
+  const { company, persona, contacts } = result;
+  const fit = upgradeFit(result.fit); // results shown before requirement-based scoring
   return (
     <div className="stack">
       <header className="company">
         {company.logo ? <img src={company.logo} alt="" className="logo" /> : <div className="logo placeholder">{company.name[0]}</div>}
         <div className="grow">
           <h1>{company.name}</h1>
+          <div className="small muted">{company.domain}</div>
           <div className="small muted">
-            {[company.domain, company.industry, company.headcount && `${company.headcount.toLocaleString('en-US')} employees`, company.fundingStage]
+            {[company.headcount && `${company.headcount.toLocaleString('en-US')} employees`, company.fundingStage, company.industry]
               .filter(Boolean)
-              .join(' · ')}
+              .join(', ')}
           </div>
         </div>
         {!loading && <SaveButton result={result} />}
@@ -180,14 +184,10 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
       )}
 
       {persona && (
-        <div className="small">
-          <span className="muted">Best persona: </span>
-          {persona.chosen ? (
-            <strong>{persona.chosen}</strong>
-          ) : (
-            <strong>none of your personas fit</strong>
-          )}
-          {persona.chosen && <span className="muted"> · {pct(persona.distribution[persona.chosen] ?? persona.confidence)}</span>}
+        <div className="small persona">
+          <span className="muted">Best persona </span>
+          {persona.chosen ? <strong>{persona.chosen}</strong> : <strong>none of your personas fit</strong>}
+          {persona.chosen && <span className="muted"> ({pct(persona.distribution[persona.chosen] ?? persona.confidence)})</span>}
         </div>
       )}
 
@@ -200,7 +200,7 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
       {!loading && (
         <div className="row spread small muted">
           <span>{cached ? `Updated ${ago(result.fetchedAt)}` : 'Just updated'}</span>
-          <button className="link small" onClick={() => lookup(domain, true)}>Refresh · {cost} credit{cost === 1 ? '' : 's'}</button>
+          <button className="link small" onClick={() => lookup(domain, true)}>Refresh ({cost} credit{cost === 1 ? '' : 's'})</button>
         </div>
       )}
     </div>
@@ -210,15 +210,20 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
 function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
   const tone = fit.score >= 70 ? 'good' : fit.score >= LOW_FIT ? 'warn' : 'bad';
   const word = fit.score >= 70 ? 'Strong fit' : fit.score >= LOW_FIT ? 'Partial fit' : 'Weak fit';
+  const explained = fit.requirements !== undefined && fit.requirements !== null && fit.overall !== undefined;
   return (
-    <section className="card stack">
-      <div className="row spread">
-        <div>
-          <div className={`score ${tone}`}>{fit.score}%</div>
-          <div className="small muted">ICP match</div>
+    <section className="fit">
+      <div className="row spread fit-head">
+        <div className="score" aria-label={`ICP match ${fit.score} percent`}>
+          {fit.score}<span className="unit">%</span>
         </div>
         <span className={`pill ${tone}`}>{word}</span>
       </div>
+      <RequirementStrip states={fit.checks.map(checkState)} />
+      <p className="small muted fit-why">
+        {fit.checks.length ? `${checksSummary(fit.checks)}.` : 'No requirements set.'}
+        {explained && ` Overall judgment ${fit.overall}.`}
+      </p>
       {fit.checks.length > 0 && (
         <ul className="checks">
           {fit.checks.map((c, i) => <CheckRow key={i} check={c} />)}
@@ -229,10 +234,6 @@ function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
 }
 
 const RELEVANT = 0.5;
-const SIGNAL_ICON: Record<Signal['kind'], string> = {
-  hiring: '🔥', hiring_volume: '📋', headcount_growth: '📈', headcount_decline: '📉', funding: '💰', site: '🌐',
-};
-
 const signalKey = (s: Signal) => `${s.kind}:${s.siteType ?? ''}`;
 
 function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
@@ -242,11 +243,12 @@ function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
   const t = whyNow.timing;
   const [tone, word] = t === null ? ['', 'No signals'] : t >= 67 ? ['good', 'Hot'] : t >= 34 ? ['warn', 'Warm'] : ['', 'Quiet'];
   return (
-    <section className="card stack">
+    <section className="section stack">
       <div className="row spread">
         <h2>Why now</h2>
-        <span className={`pill ${tone}`} title={t === null ? undefined : `Timing score ${t}/100`}>
-          {word}{t !== null && ` · ${t}`}
+        <span className="row small">
+          {t !== null && <span className="muted">Timing {t}</span>}
+          <span className={`pill ${tone}`}>{word}</span>
         </span>
       </div>
       {relevant.length ? (
@@ -279,7 +281,6 @@ function SignalRow({ signal: s }: { signal: Signal }) {
   if (s.kind === 'site') return <SiteSignalRow signal={s} />;
   return (
     <li>
-      <span className="icon" aria-hidden>{SIGNAL_ICON[s.kind]}</span>
       <div className="grow">
         <div className="row spread">
           <strong>{s.label}</strong>
@@ -296,7 +297,7 @@ function SignalRow({ signal: s }: { signal: Signal }) {
             )}
           </>
         ) : (
-          links[0] && <a className="small" href={links[0].url!} target="_blank" rel="noreferrer">Source ↗</a>
+          links[0] && <a className="small" href={links[0].url!} target="_blank" rel="noreferrer">Source</a>
         )}
       </div>
     </li>
@@ -309,10 +310,11 @@ function SiteSignalRow({ signal: s }: { signal: Signal }) {
   const [first, ...more] = s.evidence;
   return (
     <li>
-      <span className="icon" aria-hidden>{SIGNAL_ICON.site}</span>
       <div className="grow">
         <div className="row spread">
           <strong>{s.label}</strong>
+          <span className="small muted">from their site</span>
+          <span className="grow" />
           <span className="small muted" title="How relevant this is to what you sell">{pct(s.relevance)}</span>
         </div>
         {first && <Quote evidence={first} />}
@@ -335,21 +337,20 @@ function Quote({ evidence: e }: { evidence: Signal['evidence'][number] }) {
       <span className="muted">
         {' '}
         {e.url && <a href={e.url} target="_blank" rel="noreferrer">{path}</a>}
-        {e.date && ` · ${new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`}
+        {e.date && `, ${new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`}
       </span>
     </div>
   );
 }
 
 function CheckRow({ check }: { check: Check }) {
-  const icon = check.pass === null ? '?' : check.pass ? '✓' : '✗';
-  const tone = check.pass === null ? 'unknown' : check.pass ? 'pass' : 'fail';
+  const state = checkState(check);
   const detail = check.detail ?? (check.p !== undefined ? pct(check.p) : undefined);
   return (
-    <li className={tone}>
-      <span className="icon" aria-hidden>{icon}</span>
+    <li>
+      <StateIcon state={state} />
       <span className="grow">{check.label}</span>
-      {detail && <span className="small muted">{detail}</span>}
+      {detail && <span className={`small ${state === 'near' || state === 'unsure' ? 'state-near' : 'muted'}`}>{detail}</span>}
     </li>
   );
 }
@@ -360,7 +361,7 @@ function Contacts({ result, ranking, windowId, lowFit }: { result: LookupResult;
   if (lowFit && !showAnyway) {
     return (
       <button className="link" onClick={() => setShowAnyway(true)}>
-        Show {contacts.length} contact{contacts.length === 1 ? '' : 's'} anyway →
+        Show {contacts.length} contact{contacts.length === 1 ? '' : 's'} anyway
       </button>
     );
   }
@@ -432,7 +433,7 @@ function ContactCard({ contact: c, domain, windowId, featured }: { contact: Cont
         )
       ) : c.hasEmail ? (
         <button className={featured ? 'primary' : ''} disabled={busy} onClick={reveal}>
-          {busy ? 'Revealing…' : 'Reveal email · 1 credit'}
+          {busy ? 'Revealing…' : 'Reveal email (1 credit)'}
         </button>
       ) : (
         <div className="small muted">No email in Apollo</div>
@@ -461,7 +462,11 @@ function SaveButton({ result }: { result: LookupResult }) {
     else await store.saveAccount(result);
     setSaved(!saved);
   };
-  return <button className={saved ? 'ghost' : ''} onClick={toggle}>{saved ? '★ Saved' : '☆ Save'}</button>;
+  return (
+    <button className={saved ? 'saved' : ''} aria-pressed={saved} onClick={toggle} title={saved ? 'Remove from My Accounts' : 'Add to My Accounts'}>
+      {saved ? 'Saved' : 'Save'}
+    </button>
+  );
 }
 
 function CompanySkeleton({ domain }: { domain: string }) {

@@ -130,7 +130,7 @@ export function signalCandidates(org: ApolloOrg, jobs: JobCandidate[], now: numb
       out.push({
         kind: 'funding',
         label: acquired ? `Merger / acquisition${amount ? ` (${amount})` : ''}` : `Raised ${amount ? `${amount} ` : ''}${round}`,
-        detail: `${monthYear(funding.date)} · ${agoLabel(months)}`,
+        detail: `${monthYear(funding.date)}, ${agoLabel(months)}`,
         evidence: [{ label: funding.url ? 'Announcement' : 'Apollo funding data', url: funding.url, date: funding.date }],
         fact: `Company ${acquired ? 'went through a merger or acquisition' : `raised ${amount ? `${amount} ` : ''}${round}`} ${agoLabel(months)}${funding.investors ? ` from ${funding.investors}` : ''}.`,
       });

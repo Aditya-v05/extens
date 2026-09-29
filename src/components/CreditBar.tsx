@@ -32,7 +32,7 @@ export function CreditBar({ credits, onSettings }: { credits: CreditState; onSet
         </div>
         <Bar used={balance.consumed} of={balance.limit} />
         <div className="small muted">
-          ICP Scout used {fmt(spent)} this month{budget !== null && ` · budget ${fmt(budget)}`}
+          ICP Scout used {fmt(spent)} this month{budget !== null && `, budget ${fmt(budget)}`}
         </div>
       </div>
     );

@@ -49,6 +49,15 @@ describe('evaluateRules', () => {
     expect(evaluateRules(rules, company).map((c) => c.pass)).toEqual([true, false]);
     expect(evaluateRules(rules, { ...company, headcount: null, country: null }).map((c) => c.pass)).toEqual([null, null]);
   });
+  it('treats headcount just outside a limit as a near miss with half credit', () => {
+    const rules = { headcount: { min: 50, max: 500 }, countries: [], checks: [], personas: [] };
+    const at = (n: number) => evaluateRules(rules, { ...company, headcount: n })[0]!;
+    expect([at(500).state, at(500).credit]).toEqual(['met', 1]);
+    expect([at(520).state, at(520).credit, at(520).detail]).toEqual(['near', 0.5, '520, just over']);
+    expect([at(550).state, at(551).state]).toEqual(['near', 'not_met']);
+    expect([at(46).state, at(46).detail, at(44).state]).toEqual(['near', '46, just under', 'not_met']);
+  });
+
   it('skips rules that are not set', () => {
     expect(evaluateRules({ headcount: null, countries: [], checks: [], personas: [] }, company)).toEqual([]);
   });

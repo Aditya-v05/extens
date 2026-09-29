@@ -42,8 +42,8 @@ await page.waitForTimeout(200);
 const meta = await page.evaluate(async () => (await chrome.storage.local.get('accountMeta')).accountMeta);
 check(meta['linear.app']?.status === 'replied', 'status change is saved');
 check(
-  (await page.locator('.company strong').allInnerTexts()).join() === 'Gorgias,Intercom,Linear',
-  'saved accounts are ranked by priority',
+  (await page.locator('.company strong').allInnerTexts()).join() === 'Linear,Gorgias,Intercom',
+  'saved accounts are ranked by priority (Linear 68, Gorgias 59, Intercom 49)',
 );
 await page.fill('.search', 'support');
 await page.waitForTimeout(100);
@@ -62,14 +62,22 @@ await page.screenshot({ path: `${OUT}/accounts-narrow.png`, fullPage: true });
 const panel = await ctx.newPage();
 await panel.setViewportSize({ width: 400, height: 1100 });
 await panel.goto(`chrome-extension://${id}/sidepanel.html`);
-await panel.evaluate(async (result) => {
-  const w = await chrome.windows.getCurrent();
-  await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'done', domain: 'linear.app', result, cached: true } });
-}, results['linear.app']);
-await panel.reload();
-await panel.waitForSelector('.score');
-await panel.click('text=/less relevant/').catch(() => {});
-await panel.screenshot({ path: `${OUT}/panel.png`, fullPage: true });
+// The UI must stay white even when the OS is in dark mode.
+await panel.emulateMedia({ colorScheme: 'dark' });
+for (const domain of ['gorgias.com', 'linear.app']) {
+  await panel.evaluate(async ({ domain, result }) => {
+    const w = await chrome.windows.getCurrent();
+    await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'done', domain, result, cached: true } });
+  }, { domain, result: results[domain] });
+  await panel.reload();
+  await panel.waitForSelector('.score');
+  await panel.click('text=/less relevant/').catch(() => {});
+  await panel.screenshot({ path: `${OUT}/panel-${domain.split('.')[0]}.png`, fullPage: true });
+}
+const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
+check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
+const text = await panel.evaluate(() => document.body.innerText);
+check(!/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\u2605\u2606\u2713\u2717]/u.test(text), 'no emoji or symbol glyphs in the panel');
 
 // Settings page.
 const opts = await ctx.newPage();

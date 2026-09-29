@@ -122,26 +122,44 @@ export function headcountLabel(h: NonNullable<Rules['headcount']>): string {
   return 'Any size';
 }
 
+/** Headcount this close outside a limit (as a share of the limit) is a near miss, not a fail. */
+export const NEAR_MISS = 0.1;
+
 /** Exact rules, evaluated in code against Apollo facts. */
 export function evaluateRules(rules: Rules, company: Company): Check[] {
   const out: Check[] = [];
   const h = rules.headcount;
   if (h && (h.min !== null || h.max !== null)) {
     const n = company.headcount;
-    out.push({
-      label: headcountLabel(h),
-      source: 'rule',
-      pass: n === null ? null : (h.min === null || n >= h.min) && (h.max === null || n <= h.max),
-      detail: n === null ? 'Headcount unknown' : `${n.toLocaleString('en-US')} employees`,
-    });
+    const base = { label: headcountLabel(h), source: 'rule' as const };
+    if (n === null) {
+      out.push({ ...base, pass: null, state: 'unknown', credit: null, detail: 'Headcount unknown' });
+    } else {
+      const inside = (h.min === null || n >= h.min) && (h.max === null || n <= h.max);
+      const near =
+        !inside &&
+        (h.max === null || n <= h.max * (1 + NEAR_MISS)) &&
+        (h.min === null || n >= h.min * (1 - NEAR_MISS));
+      const fmt = n.toLocaleString('en-US');
+      out.push({
+        ...base,
+        pass: inside,
+        state: inside ? 'met' : near ? 'near' : 'not_met',
+        credit: inside ? 1 : near ? 0.5 : 0,
+        detail: near ? `${fmt}, just ${h.max !== null && n > h.max ? 'over' : 'under'}` : `${fmt} employees`,
+      });
+    }
   }
   if (rules.countries.length) {
     const c = company.country;
     const label = rules.countries.length > 3 ? `Based in ${rules.countries.slice(0, 3).join(', ')} +${rules.countries.length - 3}` : `Based in ${rules.countries.join(', ')}`;
+    const pass = c ? rules.countries.some((x) => x.toLowerCase() === c.toLowerCase()) : null;
     out.push({
       label,
       source: 'rule',
-      pass: c ? rules.countries.some((x) => x.toLowerCase() === c.toLowerCase()) : null,
+      pass,
+      state: pass === null ? 'unknown' : pass ? 'met' : 'not_met',
+      credit: pass === null ? null : pass ? 1 : 0,
       detail: c ?? 'Country unknown',
     });
   }

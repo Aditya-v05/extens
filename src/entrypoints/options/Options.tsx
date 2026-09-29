@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StateIcon } from '@/components/Icon';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost, totalSpent } from '@/lib/credits';
 import { openAccounts, send, type KeyTest } from '@/lib/messages';
@@ -46,10 +47,10 @@ function KeysSection() {
 
   return (
     <section className="card stack">
-      <h2>1 · API keys</h2>
+      <h2>API keys</h2>
       <KeyField
         label="Apollo API key"
-        hint={<>From Apollo → Settings → Integrations → API. It needs access to people search and enrichment.</>}
+        hint={<>In Apollo: Settings, Integrations, API. It needs access to people search and enrichment.</>}
         value={keys.apollo}
         onChange={(apollo) => setKeys({ ...keys, apollo })}
         test={tests?.apollo}
@@ -80,7 +81,11 @@ function KeyField(props: { label: string; hint: React.ReactNode; value: string; 
         <button className="ghost" onClick={() => setShown(!shown)}>{shown ? 'Hide' : 'Show'}</button>
       </div>
       <div className="small muted hint">{props.hint}</div>
-      {props.test && <div className={`small ${props.test.ok ? 'ok' : 'err'}`}>{props.test.ok ? '✓ ' : '✗ '}{props.test.message}</div>}
+      {props.test && (
+        <div className={`small row ${props.test.ok ? 'ok' : 'err'}`}>
+          <StateIcon state={props.test.ok ? 'met' : 'not_met'} /> {props.test.message}
+        </div>
+      )}
     </div>
   );
 }
@@ -113,7 +118,7 @@ function ProfileSection() {
 
   return (
     <section className="card stack">
-      <h2>2 · What you sell</h2>
+      <h2>What you sell</h2>
       <Field
         label="What do you sell?"
         placeholder="AI support QA software for SaaS companies."
@@ -234,7 +239,7 @@ function ListEditor({ label, hint, items, onChange }: { label: string; hint: str
         {items.map((item, i) => (
           <li key={i} className="row">
             <input value={item} onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))} />
-            <button className="ghost" aria-label={`Remove ${item}`} onClick={() => onChange(items.filter((_, j) => j !== i))}>✕</button>
+            <button className="ghost" aria-label={`Remove ${item}`} onClick={() => onChange(items.filter((_, j) => j !== i))}>Remove</button>
           </li>
         ))}
       </ul>
@@ -267,7 +272,7 @@ function CreditsSection() {
 
   return (
     <section className="card stack">
-      <h2>3 · Apollo credits</h2>
+      <h2>Apollo credits</h2>
       <p className="small muted" style={{ margin: 0 }}>
         A new company lookup costs {lookupCost(settings)} Apollo credit{lookupCost(settings) === 1 ? '' : 's'}: 1 for the company
         {settings.fetchJobs ? ', 1 for job postings' : ''}. People search is free. Revealing an email costs 1.
@@ -279,7 +284,7 @@ function CreditsSection() {
         <div>
           <strong>{totalSpent(ledger)}</strong>
           <span className="muted small">
-            {' '}· {ledger.company} company lookups · {ledger.jobs} job-posting fetches · {ledger.reveal} email reveals
+            {' '}({ledger.company} company lookups, {ledger.jobs} job-posting fetches, {ledger.reveal} email reveals)
           </span>
         </div>
       </div>
@@ -289,7 +294,7 @@ function CreditsSection() {
         {balance?.available ? (
           <div>
             <strong>{balance.leftOver.toLocaleString('en-US')}</strong> of {balance.limit.toLocaleString('en-US')} lead credits left
-            {balance.cycleEnd && <span className="muted small"> · resets {new Date(balance.cycleEnd).toLocaleDateString()}</span>}
+            {balance.cycleEnd && <span className="muted small">, resets {new Date(balance.cycleEnd).toLocaleDateString()}</span>}
           </div>
         ) : (
           <div className="small muted">
@@ -345,7 +350,7 @@ function CreditsSection() {
 function AccountsSection() {
   return (
     <section className="card stack">
-      <h2>4 · My Accounts</h2>
+      <h2>My Accounts</h2>
       <p className="small muted" style={{ margin: 0 }}>
         Saved and recently viewed companies, ranked by fit and timing, with status, notes and CSV export.
       </p>

@@ -156,7 +156,19 @@ All calls: `POST /v1/systemone`, `model: "jev-latest"`. State = seller profile +
 - `icp_fit` — **Score**, 5 levels, from "clearly outside the ICP (wrong kind of company)" to "a textbook ICP customer." Each level is a concrete description.
 - One **Noul** per semantic rule, e.g. `is_b2b_saas`, `stage_in_range`, `custom_1: "Has a large customer support team"`. These become the ✓/✗ checklist.
 - Exact rules (headcount, country) are evaluated in **code**, not Jev, and merged into the same checklist.
-- **Displayed score** = the `icp_fit` Score mapped to 0–100. Checks are shown next to it and never silently combined into it.
+- **Each check has a state and a credit:**
+  - **met** (1); **not met** (0).
+  - **near miss** (0.5): headcount within 10% outside a limit, e.g. 520 against 500.
+  - **unsure** (Jev p between 0.35 and 0.65; credit = p).
+  - **unknown** (no Apollo data; not counted).
+  - Jev checks use p as credit.
+- **Displayed score** = `0.75 × requirements + 0.25 × overall`:
+  - *requirements* = average credit over the checks;
+  - *overall* = Jev's holistic `icp_fit` Score (0–100), which catches what the checks don't, like whether they need what you sell;
+  - with no checks, the score is *overall* alone.
+- **Shown as:** the score; a strip with one segment per check coloured by state; "2 of 4 met, 1 near miss, 1 unsure. Overall judgment 53."; and the checklist with line icons.
+- **Why:** on 2026-09-29 a real Gorgias lookup showed 3 ticks next to "53%, Partial fit", because the score was *overall* alone. The user reasonably read that as broken.
+- **Old results:** results cached or saved before this are rebuilt on display (`upgradeFit`). Nothing needs clearing.
 
 ### Decision 2 — Timing ("why now", built)
 Code builds candidate signals from Apollo facts, each with evidence (`src/lib/signals.ts`):

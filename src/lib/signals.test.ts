@@ -65,7 +65,7 @@ describe('signalCandidates', () => {
     const s = signalCandidates(org, threeJobs, NOW);
     expect(s.map((x) => [x.kind, x.label, x.detail])).toEqual([
       ['headcount_growth', 'Headcount +21% in 6 months', '+42% in 12 months'],
-      ['funding', 'Raised $82M Series C', 'Jun 2025 · 1 year ago'],
+      ['funding', 'Raised $82M Series C', 'Jun 2025, 1 year ago'],
       ['hiring_volume', '3 open roles', '2 posted in the last 30 days'],
     ]);
     expect(s[1]!.evidence[0]).toMatchObject({ url: 'https://news.example/c' });

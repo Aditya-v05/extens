@@ -47,10 +47,19 @@ export interface Company {
   linkedin: string | null;
 }
 
+/**
+ * met / not_met: clear answer. near: an exact rule missed by a small margin (e.g. 520 vs a 500 cap).
+ * unsure: Jev can't tell (probability between 0.35 and 0.65). unknown: Apollo has no data.
+ */
+export type CheckState = 'met' | 'near' | 'unsure' | 'not_met' | 'unknown';
+
 export interface Check {
   label: string;
-  /** null when data is missing. */
+  /** Kept for results cached before `state` existed; prefer `state`. null when data is missing. */
   pass: boolean | null;
+  state?: CheckState;
+  /** 0–1 contribution to the requirements score; null = not counted (unknown). */
+  credit?: number | null;
   source: 'rule' | 'jev';
   /** Jev probability of yes, for semantic checks. */
   p?: number;
@@ -58,10 +67,14 @@ export interface Check {
 }
 
 export interface Fit {
-  /** 0–100, from the Jev Score. */
+  /** 0–100 headline: 75% requirements + 25% Jev's overall judgment (overall alone when there are no checks). */
   score: number;
   confidence: number;
   checks: Check[];
+  /** 0–100 average credit over the checks; null when no check could be judged. */
+  requirements?: number | null;
+  /** 0–100 Jev's holistic ICP judgment (the Score question). */
+  overall?: number;
 }
 
 export interface PersonaPick {

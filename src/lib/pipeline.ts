@@ -3,7 +3,7 @@ import * as apollo from './apollo';
 import { lookupCost, overBudget, parseBalance, totalSpent, type Settings } from './credits';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
-import { applyRanks, mapFit, mapPersona, mapWhyNow } from './mapping';
+import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
 import type { Answer } from './jev';
 import {
   ROLE_BATCH, accountQuestions, companyState, jobId, peopleState, rankQuestions, roleQuestions, sellerState,
@@ -58,7 +58,7 @@ export async function runLookup(windowId: number | null, domain: string, opts: L
     const hit = await store.getCached(domain);
     if (hit) {
       const contacts = hit.contacts ? await store.withReveals(hit.contacts) : null;
-      return show({ status: 'done', domain, result: { ...hit, contacts }, cached: true });
+      return show({ status: 'done', domain, result: upgradeResult({ ...hit, contacts }), cached: true });
     }
   }
 

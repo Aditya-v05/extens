@@ -30,9 +30,15 @@ export const results = {
       sig('site', 'M&A news', 'Salesforce signs definitive agreement to acquire Fin', 0.27, [{ label: 'Salesforce signs definitive agreement to acquire Fin', url: 'https://www.intercom.com/blog/salesforce', date: '2026-06-14' }], 'acquisition'),
     ] },
   },
+  // Matches the real gorgias.com lookup from 2026-09-29 (520 employees is a near miss on 50–500).
   'gorgias.com': {
-    domain: 'gorgias.com', fetchedAt: now - 1 * DAY, company: company('Gorgias', 'gorgias.com', 'computer software', 420, 'Series C', null),
-    fit: { score: 82, confidence: 0.7, checks: checks(true, true, true, true) }, persona: { chosen: 'VP Customer Experience', confidence: 0.8, distribution: {} },
+    domain: 'gorgias.com', fetchedAt: now - 1 * DAY, company: company('Gorgias', 'gorgias.com', 'information technology & services', 520, 'Series C', null),
+    fit: { score: 69, requirements: 74, overall: 53, confidence: 0.4, checks: [
+      { label: '50–500 employees', source: 'rule', pass: false, state: 'near', credit: 0.5, detail: '520, just over' },
+      { label: 'Based in United States', source: 'rule', pass: true, state: 'met', credit: 1, detail: 'United States' },
+      { label: 'Series A–C SaaS companies', source: 'jev', pass: true, state: 'met', credit: 0.96, p: 0.96 },
+      { label: 'large customer support teams', source: 'jev', pass: true, state: 'unsure', credit: 0.5, p: 0.5 },
+    ] }, persona: { chosen: 'Head of Support', confidence: 0.72, distribution: { 'Head of Support': 0.72 } },
     contacts: [contact('g1', 'Maya', 'Chen', 'VP Customer Experience', 91, 'maya@gorgias.com'), contact('g2', 'Tom', 'Reyes', 'Head of Support', 88)],
     whyNow: { timing: 45, jobsStatus: 'ok', siteStatus: 'unavailable', signals: [sig('hiring', 'Hiring 6 relevant roles', 'Senior Customer Success Manager - Enterprise +5 more', 0.64)] },
   },

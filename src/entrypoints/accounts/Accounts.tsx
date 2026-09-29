@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { CreditBar } from '@/components/CreditBar';
 import { ago, pct } from '@/components/format';
+import { StateIcon } from '@/components/Icon';
+import { checkState } from '@/lib/mapping';
 import { useCredits } from '@/components/useCredits';
 import {
   HOT_TIMING, SORT_LABELS, STATUS_LABELS, bestContact, buildRows, filterRows, sortRows, topSignal,
@@ -122,7 +124,7 @@ function EmptyState({ tab, filtered }: { tab: Tab; filtered: boolean }) {
   return tab === 'saved' ? (
     <div className="card empty">
       <h2>No saved accounts yet</h2>
-      <p className="muted">Look up a company in the side panel and hit ☆ Save. Anything you looked up in the last 7 days is under “Recently viewed”.</p>
+      <p className="muted">Look up a company in the side panel and click Save. Anything you looked up in the last 7 days is under “Recently viewed”.</p>
     </div>
   ) : (
     <div className="card empty">
@@ -180,7 +182,8 @@ function AccountRowView({ row, cost }: { row: AccountRow; cost: number }) {
           <span className="grow">
             <strong>{c.name}</strong>
             <span className="small muted block">
-              {[row.domain, c.industry, c.headcount && `${c.headcount.toLocaleString('en-US')} emp.`].filter(Boolean).join(' · ')}
+              {row.domain}
+              {c.headcount ? `, ${c.headcount.toLocaleString('en-US')} employees` : ''}
             </span>
           </span>
         </button>
@@ -188,7 +191,12 @@ function AccountRowView({ row, cost }: { row: AccountRow; cost: number }) {
         <span className={`num ${tone(r.fit?.score, 70, 40)}`}>{r.fit ? `${r.fit.score}%` : '–'}</span>
 
         <span className="why">
-          {timing !== null && <span className={`pill ${tone(timing)}`}>{timing >= 67 ? 'Hot' : timing >= 34 ? 'Warm' : 'Quiet'} · {timing}</span>}
+          {timing !== null && (
+            <span className="row small">
+              <span className={`pill ${tone(timing)}`}>{timing >= 67 ? 'Hot' : timing >= 34 ? 'Warm' : 'Quiet'}</span>
+              <span className="muted">{timing}</span>
+            </span>
+          )}
           <span className="small block">{signal ? signal.label : <span className="muted">No strong signal</span>}</span>
         </span>
 
@@ -217,14 +225,14 @@ function AccountRowView({ row, cost }: { row: AccountRow; cost: number }) {
 
         <span className={`small ${row.stale ? 'stale' : 'muted'}`} title={new Date(r.fetchedAt).toLocaleString()}>
           {ago(r.fetchedAt)}
-          {row.stale && ' · stale'}
+          {row.stale && ', stale'}
         </span>
 
         <span className="actions row">
           <button className="small" disabled={busy} onClick={() => refresh()} title={`Refresh costs ${cost} Apollo credits`}>
-            {busy ? 'Refreshing…' : `Refresh · ${cost} cr`}
+            {busy ? 'Refreshing…' : `Refresh (${cost} cr)`}
           </button>
-          <button className="ghost small" onClick={toggleSaved}>{row.saved ? 'Remove' : '☆ Save'}</button>
+          <button className="ghost small" onClick={toggleSaved}>{row.saved ? 'Remove' : 'Save'}</button>
         </span>
       </div>
 
@@ -250,13 +258,13 @@ function AccountDetails({ row }: { row: AccountRow }) {
         {r.fit ? (
           <ul className="plain small">
             {r.fit.checks.map((ch, i) => (
-              <li key={i}>
-                <span className={ch.pass === null ? 'muted' : ch.pass ? 'ok' : 'err'}>{ch.pass === null ? '?' : ch.pass ? '✓' : '✗'}</span> {ch.label}
+              <li key={i} className="row">
+                <StateIcon state={checkState(ch)} /> {ch.label}
               </li>
             ))}
           </ul>
         ) : <p className="muted small">No fit judgment.</p>}
-        {r.persona?.chosen && <p className="small">Best persona: <strong>{r.persona.chosen}</strong></p>}
+        {r.persona?.chosen && <p className="small">Best persona <strong>{r.persona.chosen}</strong></p>}
       </section>
 
       <section>
@@ -269,7 +277,7 @@ function AccountDetails({ row }: { row: AccountRow }) {
                 <li key={i} className={s.relevance < 0.5 ? 'muted' : ''}>
                   <strong>{s.label}</strong> <span className="muted">{pct(s.relevance)}</span>
                   {s.detail && <span className="block">{s.kind === 'site' ? `“${s.detail}”` : s.detail}</span>}
-                  {link?.url && <a href={link.url} target="_blank" rel="noreferrer">source ↗</a>}
+                  {link?.url && <a href={link.url} target="_blank" rel="noreferrer">Source</a>}
                 </li>
               );
             })}
@@ -298,8 +306,8 @@ function AccountDetails({ row }: { row: AccountRow }) {
       )}
 
       <p className="small">
-        <a href={`https://${row.domain}`} target="_blank" rel="noreferrer">Open {row.domain} ↗</a>
-        {r.company.linkedin && <> · <a href={r.company.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a></>}
+        <a href={`https://${row.domain}`} target="_blank" rel="noreferrer">Open {row.domain}</a>
+        {r.company.linkedin && <>{'   '}<a href={r.company.linkedin} target="_blank" rel="noreferrer" style={{ marginLeft: 16 }}>LinkedIn</a></>}
       </p>
     </div>
   );
@@ -321,13 +329,13 @@ function ContactLine({ contact: c, domain }: { contact: Contact; domain: string 
         <strong>{contactName(c)}</strong>
         <span className="muted block">
           {c.title ?? 'Unknown title'}
-          {c.rank !== null && <span title="How likely this person owns the problem"> · rank {c.rank}</span>}
+          {c.rank !== null && <span title="How likely this person owns the problem">, rank {c.rank}</span>}
         </span>
       </span>
       {c.revealedAt !== undefined ? (
         c.email ? <code>{c.email}</code> : <span className="muted">No email</span>
       ) : c.hasEmail ? (
-        <button className="small" disabled={busy} onClick={reveal}>{busy ? 'Revealing…' : 'Reveal · 1 cr'}</button>
+        <button className="small" disabled={busy} onClick={reveal}>{busy ? 'Revealing…' : 'Reveal (1 cr)'}</button>
       ) : (
         <span className="muted">No email in Apollo</span>
       )}

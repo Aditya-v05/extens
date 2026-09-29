@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Answer } from './jev';
-import { applyRanks, mapFit, mapPersona, mapSiteSignals, mapWhyNow } from './mapping';
+import { applyRanks, checkState, checksSummary, mapFit, upgradeFit, mapPersona, mapSiteSignals, mapWhyNow } from './mapping';
 import type { Contact, Profile } from './types';
 
 const profile: Profile = {
@@ -18,12 +18,63 @@ const answers: Record<string, Answer> = {
 };
 
 describe('mapFit', () => {
-  it('maps the 5-level score to 0–100 and nouls to checks', () => {
-    const fit = mapFit(answers, profile, [{ label: '50–500 employees', pass: true, source: 'rule' }])!;
-    expect(fit.score).toBe(53);
-    expect(fit.checks.map((c) => [c.label, c.pass])).toEqual([
-      ['50–500 employees', true], ['B2B SaaS', true], ['Large support team', false],
+  it('maps nouls to met / unsure / not met and blends requirements with the overall score', () => {
+    const fit = mapFit(answers, profile, [{ label: '50–500 employees', pass: true, state: 'met', credit: 1, source: 'rule' }])!;
+    expect(fit.overall).toBe(53);
+    expect(fit.checks.map((c) => [c.label, c.state])).toEqual([
+      ['50–500 employees', 'met'], ['B2B SaaS', 'met'], ['Large support team', 'not_met'],
     ]);
+    // requirements = (1 + 0.97 + 0.2) / 3 = 72; score = 0.75 × 72 + 0.25 × 53 = 67
+    expect([fit.requirements, fit.score]).toEqual([72, 67]);
+  });
+
+  it('scores the real Gorgias lookup from 2026-09-29 by the requirements, not just the overall view', () => {
+    const gorgias: Record<string, Answer> = {
+      icp_fit: { type: 'score', score: 2.1, confidence: 0.4, probabilities: {} },
+      check_0: { type: 'noul', noul: 0.96 },
+      check_1: { type: 'noul', noul: 0.5 },
+    };
+    const p = { ...profile, rules: { ...profile.rules, checks: ['Series A–C SaaS companies', 'large customer support teams'] } };
+    const rules = [
+      { label: '50–500 employees', source: 'rule' as const, pass: false, state: 'near' as const, credit: 0.5 },
+      { label: 'Based in United States', source: 'rule' as const, pass: true, state: 'met' as const, credit: 1 },
+    ];
+    const fit = mapFit(gorgias, p, rules)!;
+    expect(fit.checks.map((c) => c.state)).toEqual(['near', 'met', 'met', 'unsure']);
+    expect(checksSummary(fit.checks)).toBe('2 of 4 met, 1 near miss, 1 unsure');
+    // requirements = (0.5 + 1 + 0.96 + 0.5) / 4 = 74; score = 0.75 × 74 + 0.25 × 53 = 69 (was 53)
+    expect([fit.requirements, fit.overall, fit.score]).toEqual([74, 53, 69]);
+  });
+
+  it('falls back to the overall score when there are no checks, and ignores checks without data', () => {
+    expect(mapFit(answers, { ...profile, rules: { ...profile.rules, checks: [] } }, [])!.score).toBe(53);
+    const fit = mapFit(answers, { ...profile, rules: { ...profile.rules, checks: [] } }, [
+      { label: 'x', source: 'rule', pass: null, state: 'unknown', credit: null },
+    ])!;
+    expect([fit.requirements, fit.score]).toEqual([null, 53]);
+  });
+
+  it('upgrades results cached before requirement-based scoring', () => {
+    // The real linear.app result as stored before this change: score = overall only.
+    const old = {
+      score: 35, confidence: 0.4,
+      checks: [
+        { label: '50–500 employees', source: 'rule' as const, pass: true, detail: '180 employees' },
+        { label: 'Based in United States', source: 'rule' as const, pass: true },
+        { label: 'Series A–C SaaS companies', source: 'jev' as const, pass: true, p: 0.94 },
+        { label: 'large customer support teams', source: 'jev' as const, pass: false, p: 0.27 },
+      ],
+    };
+    const fit = upgradeFit(old)!;
+    expect(fit.checks.map((c) => c.state)).toEqual(['met', 'met', 'met', 'not_met']);
+    // requirements = (1 + 1 + 0.94 + 0.27) / 4 = 80; score = 0.75 × 80 + 0.25 × 35 = 69
+    expect([fit.requirements, fit.overall, fit.score]).toEqual([80, 35, 69]);
+    expect(upgradeFit(fit)).toBe(fit); // already current: untouched
+  });
+
+  it('reads the state of checks cached before states existed', () => {
+    expect(checkState({ label: 'x', source: 'jev', pass: true })).toBe('met');
+    expect(checkState({ label: 'x', source: 'rule', pass: null })).toBe('unknown');
   });
   it('returns null without a fit answer', () => expect(mapFit({}, profile, [])).toBeNull());
 });

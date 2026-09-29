@@ -1,3 +1,4 @@
+import { upgradeResult } from './mapping';
 import type { Contact, LookupResult } from './types';
 
 export type AccountStatus = 'new' | 'contacted' | 'replied' | 'not_fit';
@@ -56,15 +57,18 @@ export function buildRows(
   meta: Record<string, AccountMeta>,
   now = Date.now(),
 ): { saved: AccountRow[]; recent: AccountRow[] } {
-  const row = (domain: string, result: LookupResult, savedAt: number | null): AccountRow => ({
-    domain,
-    result,
-    saved: savedAt !== null,
-    savedAt,
-    meta: meta[domain] ?? EMPTY_META,
-    priority: priority(result),
-    stale: isStale(result, now),
-  });
+  const row = (domain: string, raw: LookupResult, savedAt: number | null): AccountRow => {
+    const result = upgradeResult(raw); // fit scores saved before requirement-based scoring
+    return {
+      domain,
+      result,
+      saved: savedAt !== null,
+      savedAt,
+      meta: meta[domain] ?? EMPTY_META,
+      priority: priority(result),
+      stale: isStale(result, now),
+    };
+  };
   const savedRows = Object.entries(saved).map(([d, a]) => {
     // The cache may hold a fresher lookup than the saved snapshot.
     const fresher = cache[d] && cache[d].fetchedAt > a.fetchedAt ? cache[d] : a;
