@@ -19,3 +19,6 @@
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
 td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+
+.checkbox { font-weight: 400; cursor: pointer; }
+.checkbox input { width: auto; }

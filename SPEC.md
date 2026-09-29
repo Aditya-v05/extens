@@ -136,8 +136,21 @@ All calls: `POST /v1/systemone`, `model: "jev-latest"`. State = seller profile +
 - Exact rules (headcount, country) are evaluated in **code**, not Jev, and merged into the same checklist.
 - **Displayed score** = the `icp_fit` Score mapped to 0–100. Checks are shown next to it and never silently combined into it.
 
-### Decision 2 — Timing (v1.5)
-- One **Noul** per candidate signal: "Given what the seller sells, does *this* signal make now a good time?"
+### Decision 2 — Timing ("why now", built)
+Code builds candidate signals from Apollo facts, each with evidence (`src/lib/signals.ts`):
+- **Headcount growth/decline:** 6-month change ≥ ±5% or 12-month change ≥ ±10%.
+- **Funding:** the latest round within 24 months, linked to its news article. Mergers and acquisitions get their own label.
+- **Hiring volume:** 3 or more open roles. Postings not seen for 45+ days are dropped. The same role posted in several places is merged by stripping locations from titles.
+- **Open roles:** up to 40, each judged individually.
+
+Jev calls, run in parallel with the people ranking:
+- A **Noul** per open role, in parallel **batches of 10**: "is this role in the team run by the seller's typical buyers?" Relevant roles (p ≥ 0.5) roll up into a single "Hiring N relevant roles" signal, with a link to each posting.
+  - *Wording:* `eval/roles-eval.mjs` compares four wordings on 66 labelled roles × 3 sellers × 2 companies each (one neutral, one in the seller's own space). The buyer-team wording scored 132/132. "Building up the function the product serves" scored 117–125 and counted engineers and PMs as support roles.
+  - *Batching:* long lists squeeze answers toward 0.5. On 38 real Intercom-style roles, one call of 40 scored 31/38, while batches of 10 scored 38/38 (relevant roles averaged 0.83, irrelevant 0.18).
+- A **Noul** per other signal: does it make now an especially good time, given what the seller sells?
+- A **Score** (4 levels) for overall timing, shown as Hot (≥ 67), Warm (≥ 34) or Quiet.
+
+Signals with relevance ≥ 0.5 are shown; the rest sit behind "Show less relevant signals". Labels are always written by code, never by the model.
 
 ### Decision 3 — Person: "Who most likely owns the problem?"
 - `persona` — **Choice** over the user's personas plus `none_fit`. Asked in Jev call #1.
@@ -150,9 +163,11 @@ All calls: `POST /v1/systemone`, `model: "jev-latest"`. State = seller profile +
 
 | Purpose | Endpoint (verified 2026-09-29) | Credits |
 |---|---|---|
-| Company by domain | `GET /api/v1/organizations/enrich?domain=` | not in response headers; check dashboard |
+| Company by domain | `GET /api/v1/organizations/enrich?domain=` | 1 (per Apollo's API pricing doc) |
 | Find people | `POST /api/v1/mixed_people/api_search` (`organization_ids`, `person_titles`) | none expected |
 | Reveal email | `POST /api/v1/people/match` with `{ id }` | 1 per reveal |
+| Job postings | `GET /api/v1/organizations/{id}/job_postings` (`title`, `url`, `posted_at`, `last_seen_at`, `city`, `state`, `country`) | 1 per page (we fetch one page of 100) |
+| Credit balance | `POST /api/v1/usage_stats/credit_usage_stats` → `credit_usage_stats.lead_credit.{limit,consumed,left_over}`, `current_credit_cycle` | free; **master key only** (403 otherwise) |
 
 - Auth header: `X-Api-Key`.
 - `mixed_people/search` returned **403** for this key. Use `api_search` only.
@@ -163,6 +178,12 @@ All calls: `POST /v1/systemone`, `model: "jev-latest"`. State = seller profile +
 
 Cache everything per domain to avoid repeat spend.
 
+### Credits
+- **Ledger:** every credit-spending call is recorded in a local, per-month ledger (company, jobs, reveal). Writes are queued, so parallel calls can't lose a count.
+- **Balance:** with a master key, the panel shows Apollo's real `lead_credit` balance, refreshed after each spend. For other keys, the 403 is remembered for a day.
+- **Budget:** an optional monthly budget. When the next lookup would exceed it, the panel shows "Monthly credit budget reached" with *Look up anyway*.
+- **Hiring signals setting:** turning off job postings makes a lookup cost 1 credit instead of 2.
+
 ## 9. Storage
 
 ```
@@ -171,6 +192,9 @@ profile:   { rawAnswers, rules, personas, updatedAt }
 cache:     { [domain]: ResultObject }    // 7-day TTL
 saved:     { [domain]: ResultObject & { savedAt } }
 reveals:   { [apolloPersonId]: { email, status, revealedAt } }
+settings:  { monthlyBudget: number | null, fetchJobs: boolean }
+credits:   { month: "YYYY-MM", company, jobs, reveal }   // spent by ICP Scout
+balance:   Apollo lead-credit balance (master keys) or { available: false }
 ```
 
 ## 10. Side panel states
@@ -202,7 +226,7 @@ Results from 2026-09-29, using curl with an `Origin: chrome-extension://…` hea
 | TypeSafe accepts extension-origin calls | ✅ 200 in ~0.36s, 580 input tokens for 3 questions |
 | TypeSafe CORS preflight from a `chrome-extension://` origin | ❌ 400, so **all API calls must go through the background worker** (with host permissions, CORS doesn't apply there) |
 | Estimated latency | ~1.0s to company header; ~3s full result (org → [Jev #1 ∥ search] → Jev #2) |
-| Apollo credit cost of org enrich / search | ⏳ check the Apollo dashboard usage page |
+| Apollo credit cost of org enrich / search | ✅ Apollo's pricing doc: org enrich 1, job postings 1 per page, people search free, people enrichment 1 when found |
 | Apollo ToS on third-party BYOK tools | ⏳ still to read |
 
 Jev response shapes observed (model `jev-1.13.0`):
@@ -214,7 +238,7 @@ Sanity check: for an example seller of support QA software, Linear scored 2.1/4 
 
 ## 13. Roadmap
 
-- **v1.5 — Why now:** job postings, headcount growth, and funding from Apollo, plus Decision 2.
+- ~~**v1.5 — Why now**~~ built. See §7, Decision 2.
 - **v2 — On-site signals:** a fixed signal library (enterprise tier, SOC 2, first sales hire, new region, AI launch). Pages are fetched with per-site optional permission, code extracts candidate snippets, and Jev judges them. Every signal carries URL + date + probability.
 - **v2+:** optional self-hosted relay for phone reveals, a "My Accounts" view, and "find more companies like my saved ones."
 

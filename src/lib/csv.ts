@@ -1,7 +1,7 @@
 import type { LookupResult } from './types';
 
 const HEADER = [
-  'company', 'domain', 'fit_score', 'best_persona', 'first_name', 'last_name', 'title', 'contact_rank',
+  'company', 'domain', 'fit_score', 'timing_score', 'top_signal', 'best_persona', 'first_name', 'last_name', 'title', 'contact_rank',
   'email', 'email_status', 'linkedin', 'saved_at',
 ];
 
@@ -14,7 +14,11 @@ function cell(v: unknown): string {
 export function toCsv(saved: (LookupResult & { savedAt: number })[]): string {
   const rows: unknown[][] = [];
   for (const a of saved) {
-    const base = [a.company.name, a.domain, a.fit?.score ?? '', a.persona?.chosen ?? ''];
+    const top = a.whyNow?.signals.find((s) => s.relevance >= 0.5);
+    const base = [
+      a.company.name, a.domain, a.fit?.score ?? '', a.whyNow?.timing ?? '',
+      top ? [top.label, top.detail].filter(Boolean).join(': ') : '', a.persona?.chosen ?? '',
+    ];
     const savedAt = new Date(a.savedAt).toISOString();
     if (!a.contacts?.length) {
       rows.push([...base, '', '', '', '', '', '', '', savedAt]);

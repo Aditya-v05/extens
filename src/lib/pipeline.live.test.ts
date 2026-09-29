@@ -15,7 +15,9 @@ vi.mock('wxt/browser', () => ({
   browser: { storage: { local: area('local'), session: area('session'), onChanged: { addListener() {}, removeListener() {} } } },
 }));
 
-const { APOLLO_KEY, TYPESAFE_KEY, LIVE_DOMAIN } = process.env;
+// Vitest runs in Node; the extension's tsconfig has no Node types, so reach process via globalThis.
+const env: Record<string, string | undefined> = (globalThis as any).process?.env ?? {};
+const { APOLLO_KEY, TYPESAFE_KEY, LIVE_DOMAIN } = env;
 
 describe.skipIf(!APOLLO_KEY || !TYPESAFE_KEY)('live pipeline', () => {
   it('looks up a company end to end', async () => {
@@ -48,5 +50,8 @@ describe.skipIf(!APOLLO_KEY || !TYPESAFE_KEY)('live pipeline', () => {
     expect(view.result.fit?.score).toBeTypeOf('number');
     expect(view.result.contacts?.length).toBeGreaterThan(0);
     expect(view.result.contacts?.every((c) => c.rank !== null)).toBe(true);
+    expect(view.result.whyNow).toBeTruthy();
+    // Apollo charges 1 for the company and 1 for the job postings page.
+    expect(mem.local!.credits).toMatchObject({ company: 1, jobs: 1, reveal: 0 });
   }, 30000);
 });

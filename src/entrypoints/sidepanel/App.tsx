@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
+import { CreditBar } from '@/components/CreditBar';
+import { useCredits } from '@/components/useCredits';
+import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
 import { send } from '@/lib/messages';
 import { normalizeDomainInput } from '@/lib/resolver';
 import * as store from '@/lib/storage';
-import type { Check, Contact, LookupError, LookupResult, ViewState } from '@/lib/types';
+import type { Check, Contact, LookupError, LookupResult, Signal, ViewState, WhyNow } from '@/lib/types';
 import './panel.css';
 
 const LOW_FIT = 40;
@@ -24,13 +27,18 @@ export default function App() {
     return () => off();
   }, []);
 
-  const lookup = (domain: string, force = false) => {
-    if (windowId !== null) send({ type: 'lookup', windowId, domain, force });
+  const credits = useCredits();
+  const cost = lookupCost(credits.settings);
+  const openSettings = () => browser.runtime.openOptionsPage();
+
+  const lookup: Lookup = (domain, force = false, allowOverBudget = false) => {
+    if (windowId !== null) send({ type: 'lookup', windowId, domain, force, allowOverBudget });
   };
 
   return (
     <main className="panel">
-      <Body view={view} windowId={windowId} lookup={lookup} />
+      {view.status !== 'needs_setup' && <CreditBar credits={credits} onSettings={openSettings} />}
+      <Body view={view} windowId={windowId} lookup={lookup} cost={cost} />
       <footer className="row spread small muted">
         <span>Click the toolbar icon on any company site.</span>
         <button className="link small" onClick={() => browser.runtime.openOptionsPage()}>Settings</button>
@@ -39,12 +47,14 @@ export default function App() {
   );
 }
 
-function Body({ view, windowId, lookup }: { view: ViewState; windowId: number | null; lookup: (d: string, force?: boolean) => void }) {
+type Lookup = (domain: string, force?: boolean, allowOverBudget?: boolean) => void;
+
+function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: number | null; lookup: Lookup; cost: number }) {
   switch (view.status) {
     case 'idle':
       return (
         <Empty title="Open a company's website" body="Then click the ICP Scout icon in your toolbar.">
-          <DomainInput onSubmit={lookup} />
+          <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
     case 'needs_setup':
@@ -59,17 +69,29 @@ function Body({ view, windowId, lookup }: { view: ViewState; windowId: number | 
     case 'not_company':
       return (
         <Empty title="This isn't a company website" body="Open a company's site and click the icon again, or type a domain.">
-          <DomainInput onSubmit={lookup} />
+          <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
     case 'not_found':
       return (
         <Empty title={`Apollo doesn't know ${view.domain}`} body="Try the company's main domain.">
-          <DomainInput onSubmit={lookup} />
+          <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
+        </Empty>
+      );
+    case 'over_budget':
+      return (
+        <Empty
+          title="Monthly credit budget reached"
+          body={`ICP Scout has used ${view.spent} of your ${view.budget}-credit budget this month. Looking up ${view.domain} costs ${view.cost} more.`}
+        >
+          <div className="row">
+            <button className="primary" onClick={() => lookup(view.domain, false, true)}>Look up anyway</button>
+            <button onClick={() => browser.runtime.openOptionsPage()}>Change budget</button>
+          </div>
         </Empty>
       );
     case 'loading':
-      return <ResultView domain={view.domain} result={view.partial} loadingStage={view.stage} windowId={windowId} lookup={lookup} />;
+      return <ResultView domain={view.domain} result={view.partial} loadingStage={view.stage} windowId={windowId} lookup={lookup} cost={cost} />;
     case 'error':
       return (
         <div className="stack">
@@ -80,11 +102,11 @@ function Body({ view, windowId, lookup }: { view: ViewState; windowId: number | 
               {view.error.invalidKey && <button onClick={() => browser.runtime.openOptionsPage()}>Open Settings</button>}
             </div>
           </div>
-          {view.partial && <ResultView domain={view.domain} result={view.partial} windowId={windowId} lookup={lookup} />}
+          {view.partial && <ResultView domain={view.domain} result={view.partial} windowId={windowId} lookup={lookup} cost={cost} />}
         </div>
       );
     case 'done':
-      return <ResultView domain={view.domain} result={view.result} cached={view.cached} windowId={windowId} lookup={lookup} />;
+      return <ResultView domain={view.domain} result={view.result} cached={view.cached} windowId={windowId} lookup={lookup} cost={cost} />;
   }
 }
 
@@ -98,7 +120,7 @@ function Empty({ title, body, children }: { title: string; body: string; childre
   );
 }
 
-function DomainInput({ onSubmit }: { onSubmit: (domain: string) => void }) {
+function DomainInput({ onSubmit, cost }: { onSubmit: (domain: string) => void; cost: number }) {
   const [value, setValue] = useState('');
   const domain = normalizeDomainInput(value);
   return (
@@ -110,7 +132,7 @@ function DomainInput({ onSubmit }: { onSubmit: (domain: string) => void }) {
       }}
     >
       <input placeholder="acme.com" value={value} onChange={(e) => setValue(e.target.value)} />
-      <button type="submit" disabled={!domain}>Look up</button>
+      <button type="submit" disabled={!domain} title={`Uncached lookups cost ${cost} Apollo credits`}>Look up · {cost} cr</button>
     </form>
   );
 }
@@ -123,10 +145,11 @@ interface ResultProps {
   loadingStage?: 'company' | 'judging' | 'ranking' | 'done';
   cached?: boolean;
   windowId: number | null;
-  lookup: (d: string, force?: boolean) => void;
+  lookup: Lookup;
+  cost: number;
 }
 
-function ResultView({ domain, result, loadingStage, cached, windowId, lookup }: ResultProps) {
+function ResultView({ domain, result, loadingStage, cached, windowId, lookup, cost }: ResultProps) {
   const loading = loadingStage !== undefined;
   if (!result) return <CompanySkeleton domain={domain} />;
   const { company, fit, persona, contacts } = result;
@@ -146,6 +169,14 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup }: 
       </header>
 
       {fit ? <FitCard fit={fit} /> : loading && <SectionSkeleton label="Checking ICP fit" />}
+
+      {result.whyNow ? (
+        <WhyNowCard whyNow={result.whyNow} />
+      ) : loading ? (
+        fit && <SectionSkeleton label="Checking why now" />
+      ) : (
+        result.whyNow === undefined && <div className="small muted">Refresh to check why now.</div>
+      )}
 
       {persona && (
         <div className="small">
@@ -168,7 +199,7 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup }: 
       {!loading && (
         <div className="row spread small muted">
           <span>{cached ? `Updated ${ago(result.fetchedAt)}` : 'Just updated'}</span>
-          <button className="link small" onClick={() => lookup(domain, true)}>Refresh</button>
+          <button className="link small" onClick={() => lookup(domain, true)}>Refresh · {cost} credit{cost === 1 ? '' : 's'}</button>
         </div>
       )}
     </div>
@@ -193,6 +224,75 @@ function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
         </ul>
       )}
     </section>
+  );
+}
+
+const RELEVANT = 0.5;
+const SIGNAL_ICON: Record<Signal['kind'], string> = {
+  hiring: '🔥', hiring_volume: '📋', headcount_growth: '📈', headcount_decline: '📉', funding: '💰',
+};
+
+function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
+  const [showOthers, setShowOthers] = useState(false);
+  const relevant = whyNow.signals.filter((s) => s.relevance >= RELEVANT);
+  const others = whyNow.signals.filter((s) => s.relevance < RELEVANT);
+  const t = whyNow.timing;
+  const [tone, word] = t === null ? ['', 'No signals'] : t >= 67 ? ['good', 'Hot'] : t >= 34 ? ['warn', 'Warm'] : ['', 'Quiet'];
+  return (
+    <section className="card stack">
+      <div className="row spread">
+        <h2>Why now</h2>
+        <span className={`pill ${tone}`} title={t === null ? undefined : `Timing score ${t}/100`}>
+          {word}{t !== null && ` · ${t}`}
+        </span>
+      </div>
+      {relevant.length ? (
+        <ul className="signals">{relevant.map((s) => <SignalRow key={s.kind} signal={s} />)}</ul>
+      ) : (
+        <div className="small muted">
+          {whyNow.signals.length ? 'Nothing here looks especially relevant to what you sell.' : 'No timing signals found in Apollo.'}
+        </div>
+      )}
+      {others.length > 0 && (
+        <>
+          <button className="link small" onClick={() => setShowOthers(!showOthers)}>
+            {showOthers ? 'Hide' : 'Show'} {others.length} less relevant signal{others.length === 1 ? '' : 's'}
+          </button>
+          {showOthers && <ul className="signals dim">{others.map((s) => <SignalRow key={s.kind} signal={s} />)}</ul>}
+        </>
+      )}
+      {whyNow.jobsStatus === 'unavailable' && <div className="small muted">Job postings aren't available on this Apollo key.</div>}
+      {whyNow.jobsStatus === 'off' && <div className="small muted">Hiring signals are off in Settings (saves 1 credit per lookup).</div>}
+    </section>
+  );
+}
+
+function SignalRow({ signal: s }: { signal: Signal }) {
+  const [open, setOpen] = useState(false);
+  const links = s.evidence.filter((e) => e.url);
+  return (
+    <li>
+      <span className="icon" aria-hidden>{SIGNAL_ICON[s.kind]}</span>
+      <div className="grow">
+        <div className="row spread">
+          <strong>{s.label}</strong>
+          <span className="small muted" title="How relevant this is to what you sell">{pct(s.relevance)}</span>
+        </div>
+        {s.detail && <div className="small muted">{s.detail}</div>}
+        {s.kind === 'hiring' && links.length > 0 ? (
+          <>
+            <button className="link small" onClick={() => setOpen(!open)}>{open ? 'Hide roles' : `See ${links.length} role${links.length === 1 ? '' : 's'}`}</button>
+            {open && (
+              <ul className="evidence small">
+                {links.map((e, i) => <li key={i}><a href={e.url!} target="_blank" rel="noreferrer">{e.label}</a></li>)}
+              </ul>
+            )}
+          </>
+        ) : (
+          links[0] && <a className="small" href={links[0].url!} target="_blank" rel="noreferrer">Source ↗</a>
+        )}
+      </div>
+    </li>
   );
 }
 

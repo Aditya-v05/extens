@@ -1,4 +1,5 @@
 import type { Question } from './jev';
+import type { JobCandidate, SignalCandidate } from './signals';
 import type { Company, Contact, Profile } from './types';
 
 export const FIT_LEVELS = [
@@ -89,5 +90,66 @@ export function rankQuestions(contacts: Contact[]): Record<string, Question> {
       criteria: RANK_LEVELS,
     };
   });
+  return q;
+}
+
+// ---------- Decision 2: timing ("why now") ----------
+
+export const TIMING_LEVELS = [
+  'No sign that now is a particularly good time to reach out.',
+  'Mild signals: something is changing, but it is only loosely related to what the seller sells.',
+  'Clear signals: recent changes make what the seller sells more relevant now.',
+  'Strong, recent signals that the company needs what the seller sells right now.',
+];
+
+export const jobId = (i: number) => `job_${i}`;
+export const signalId = (i: number) => `signal_${i}`;
+
+export function whyNowState(signals: SignalCandidate[], jobs: JobCandidate[]) {
+  return {
+    signals: signals.map((s) => s.fact),
+    open_roles: jobs.map((j) => ({ title: j.title, days_open: j.daysOpen })),
+  };
+}
+
+/** Overall timing Score plus one yes/no per fact-based signal. */
+export function whyNowQuestions(signals: SignalCandidate[]): Record<string, Question> {
+  const q: Record<string, Question> = {
+    timing: {
+      type: 'score',
+      instructions:
+        'Considering `signals` and `open_roles`, how strongly does the current situation at `company` suggest that now is a good time for the seller to reach out, given what the seller sells (`seller.sells`)?',
+      criteria: TIMING_LEVELS,
+    },
+  };
+  signals.forEach((_, i) => {
+    q[signalId(i)] = {
+      type: 'noul',
+      instructions: `Given what the seller sells (\`seller.sells\`), does \`signals[${i}]\` make now an especially good time for the seller to reach out to \`company\`?`,
+    };
+  });
+  return q;
+}
+
+/**
+ * Roles are judged in batches this size. Long lists squeeze answers toward 0.5:
+ * on a 38-role eval, one call of 40 scored 31/38, batches of 10 scored 38/38 (eval/roles-eval.mjs).
+ */
+export const ROLE_BATCH = 10;
+
+/** One yes/no per role in a batch; ids are local to the batch (`job_0`..). */
+export function roleQuestions(count: number): Record<string, Question> {
+  // Wording chosen by eval/roles-eval.mjs: anchoring on the buyers' team beat "the function the product serves".
+  const q: Record<string, Question> = {};
+  for (let i = 0; i < count; i++) {
+    q[jobId(i)] = {
+      type: 'noul',
+      instructions: `Is \`open_roles[${i}]\` a role in the team or department run by the seller's typical buyers (\`seller.typical_buyers\`), i.e. the people who would use the seller's product (\`seller.sells\`)?`,
+      criteria: {
+        true: "Yes: this hire joins the team that uses or owns the seller's product.",
+        false: "No: this hire is in another function (for example sales, engineering, design, recruiting, finance or product), unless that function is the one the seller's product serves.",
+      },
+    };
+  }
   return q;
 }

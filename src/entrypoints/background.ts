@@ -4,7 +4,7 @@ import * as apollo from '@/lib/apollo';
 import { toLookupError, describeError } from '@/lib/errors';
 import * as jev from '@/lib/jev';
 import type { KeyTest, Message } from '@/lib/messages';
-import { revealContact, runLookup } from '@/lib/pipeline';
+import { refreshBalance, revealContact, runLookup } from '@/lib/pipeline';
 import { domainFromUrl } from '@/lib/resolver';
 import { setView } from '@/lib/storage';
 
@@ -27,9 +27,12 @@ export default defineBackground(() => {
     const msg = raw as Message;
     switch (msg.type) {
       case 'lookup':
-        runLookup(msg.windowId, msg.domain, msg.force);
+        runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget });
         sendResponse({ ok: true });
         return false;
+      case 'refreshBalance':
+        refreshBalance(true).then(() => sendResponse({ ok: true }));
+        return true;
       case 'reveal':
         revealContact(msg.windowId, msg.domain, msg.personId)
           .then(() => sendResponse({ ok: true }))
@@ -39,7 +42,10 @@ export default defineBackground(() => {
         Promise.all([
           test(() => apollo.checkKey(msg.keys.apollo), 'Apollo key not recognized'),
           test(() => jev.checkKey(msg.keys.typesafe), 'TypeSafe key not recognized'),
-        ]).then(([a, t]) => sendResponse({ apollo: a, typesafe: t }));
+        ]).then(([a, t]) => {
+          sendResponse({ apollo: a, typesafe: t });
+          if (a.ok) refreshBalance(true);
+        });
         return true;
     }
   });

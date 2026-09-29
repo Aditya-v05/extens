@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useCredits } from '@/components/useCredits';
+import { lookupCost, totalSpent } from '@/lib/credits';
 import { toCsv } from '@/lib/csv';
 import { send, type KeyTest } from '@/lib/messages';
 import { generateRules } from '@/lib/rules';
@@ -17,6 +19,7 @@ export default function Options() {
       </header>
       <KeysSection />
       <ProfileSection />
+      <CreditsSection />
       <SavedSection />
     </main>
   );
@@ -244,6 +247,88 @@ function ListEditor({ label, hint, items, onChange }: { label: string; hint: str
   );
 }
 
+// ---------- credits ----------
+
+function CreditsSection() {
+  const { settings, ledger, balance } = useCredits();
+  const [budgetText, setBudgetText] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const budgetValue = budgetText ?? (settings.monthlyBudget === null ? '' : String(settings.monthlyBudget));
+
+  const saveBudget = () => {
+    const n = budgetValue.trim() === '' ? null : Math.max(0, Math.round(Number(budgetValue)));
+    store.setSettings({ ...settings, monthlyBudget: Number.isFinite(n) ? n : null });
+    setBudgetText(null);
+  };
+  const check = async () => {
+    setChecking(true);
+    await send({ type: 'refreshBalance' });
+    setChecking(false);
+  };
+
+  return (
+    <section className="card stack">
+      <h2>3 · Apollo credits</h2>
+      <p className="small muted" style={{ margin: 0 }}>
+        A new company lookup costs {lookupCost(settings)} Apollo credit{lookupCost(settings) === 1 ? '' : 's'}: 1 for the company
+        {settings.fetchJobs ? ', 1 for job postings' : ''}. People search is free. Revealing an email costs 1.
+        Repeat visits use the 7-day cache and cost nothing.
+      </p>
+
+      <div>
+        <label>Spent by ICP Scout this month</label>
+        <div>
+          <strong>{totalSpent(ledger)}</strong>
+          <span className="muted small">
+            {' '}· {ledger.company} company lookups · {ledger.jobs} job-posting fetches · {ledger.reveal} email reveals
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <label>Apollo balance</label>
+        {balance?.available ? (
+          <div>
+            <strong>{balance.leftOver.toLocaleString('en-US')}</strong> of {balance.limit.toLocaleString('en-US')} lead credits left
+            {balance.cycleEnd && <span className="muted small"> · resets {new Date(balance.cycleEnd).toLocaleDateString()}</span>}
+          </div>
+        ) : (
+          <div className="small muted">
+            Your Apollo team balance shows here if your key is a <strong>master API key</strong>. Other keys can't read it, so ICP Scout counts its own spending instead.
+          </div>
+        )}
+        <button className="ghost small" disabled={checking} onClick={check}>{checking ? 'Checking…' : 'Check balance now'}</button>
+      </div>
+
+      <div>
+        <label>Monthly budget for ICP Scout</label>
+        <div className="row">
+          <input
+            type="number"
+            min={0}
+            placeholder="No limit"
+            value={budgetValue}
+            onChange={(e) => setBudgetText(e.target.value)}
+            onBlur={saveBudget}
+            onKeyDown={(e) => e.key === 'Enter' && saveBudget()}
+            style={{ maxWidth: 160 }}
+          />
+          <span className="small muted">credits. When reached, new lookups ask before spending.</span>
+        </div>
+      </div>
+
+      <label className="row checkbox">
+        <input
+          type="checkbox"
+          checked={settings.fetchJobs}
+          onChange={(e) => store.setSettings({ ...settings, fetchJobs: e.target.checked })}
+        />
+        <span>Hiring signals: fetch job postings for "why now" (+1 credit per lookup)</span>
+      </label>
+    </section>
+  );
+}
+
 // ---------- saved accounts ----------
 
 type Saved = LookupResult & { savedAt: number };
@@ -267,7 +352,7 @@ function SavedSection() {
   return (
     <section className="card stack">
       <div className="row spread">
-        <h2>3 · Saved accounts</h2>
+        <h2>4 · Saved accounts</h2>
         <div className="row">
           <button className="ghost" onClick={load}>Reload</button>
           <button disabled={!saved.length} onClick={exportCsv}>Export CSV</button>
@@ -278,7 +363,7 @@ function SavedSection() {
       ) : (
         <table>
           <thead>
-            <tr><th>Company</th><th>Fit</th><th>Best contact</th><th>Saved</th><th /></tr>
+            <tr><th>Company</th><th>Fit</th><th>Why now</th><th>Best contact</th><th>Saved</th><th /></tr>
           </thead>
           <tbody>
             {saved.map((a) => {
@@ -287,6 +372,10 @@ function SavedSection() {
                 <tr key={a.domain}>
                   <td><strong>{a.company.name}</strong><div className="small muted">{a.domain}</div></td>
                   <td>{a.fit ? `${a.fit.score}%` : '—'}</td>
+                  <td>
+                    {a.whyNow?.timing ?? '—'}
+                    <div className="small muted">{a.whyNow?.signals.find((s) => s.relevance >= 0.5)?.label ?? ''}</div>
+                  </td>
                   <td>
                     {best ? (
                       <>

@@ -5,8 +5,9 @@
 An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon, and a side panel tells you:
 
 1. **Does this company fit my ICP?** A fit score, plus a ✓/✗ checklist showing why.
-2. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
-3. **Their email**, revealed on click.
+2. **Why now?** Hiring for roles your product serves, headcount growth, recent funding. Each signal links to its source.
+3. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
+4. **Their email**, revealed on click.
 
 Company and people data come from **Apollo**. Judgments come from **Jev**, [TypeSafe](https://typesafe.ai)'s System One model. You bring both API keys.
 
@@ -18,13 +19,18 @@ Company and people data come from **Apollo**. Judgments come from **Jev**, [Type
 
 ## Costs
 
+Per [Apollo's API pricing](https://docs.apollo.io/docs/api-pricing):
+
 | Action | Cost |
 |---|---|
-| Company lookup + people search | Apollo API calls (search spends no credits) |
-| Fit, persona and ranking | Two Jev calls, about 1–2k input tokens per lookup |
+| New company lookup | **2 Apollo credits**: 1 for the company, 1 for job postings. Turn off hiring signals in Settings to make it 1 |
+| People search | Free |
+| Fit, persona, ranking, why now | Three Jev calls, a few thousand input tokens per lookup |
 | Reveal email | **1 Apollo credit**, and the button says so |
 
-Results are cached per domain for 7 days. Revealed emails are kept for good.
+Results are cached per domain for 7 days, so revisits are free. Revealed emails are kept for good.
+
+The side panel shows a **credit bar**. With an Apollo *master* API key it shows your team's real balance. Other keys can't read the balance, so ICP Scout counts its own spending this month instead. You can set a **monthly budget**: once it's reached, new lookups ask before spending.
 
 ## Install (from source)
 
@@ -54,19 +60,22 @@ The settings page opens on install:
 click icon → domain → Apollo company lookup
                         ├─ rules (code): headcount, country
                         ├─ Jev #1: fit score + yes/no checks + best persona   ┐ run in
-                        └─ Apollo people search (persona titles)              ┘ parallel
-                      → Jev #2: rank each person
+                        ├─ Apollo people search (persona titles)              │ parallel
+                        └─ Apollo job postings                                ┘
+                      → Jev #2: rank each person    ┐ parallel
+                      → Jev #3: why now signals     ┘
                       → side panel
 ```
 
-Everything runs in the extension's background worker. See [`SPEC.md`](SPEC.md) for the full design.
+Everything runs in the extension's background worker. See [`SPEC.md`](SPEC.md) for the full design and [`log.md`](log.md) for the change history.
 
 ## Develop
 
 ```bash
 npm test             # unit tests
 npm run compile      # type-check
-APOLLO_KEY=... TYPESAFE_KEY=... npm test   # also runs the live end-to-end test (no credits spent)
+APOLLO_KEY=... TYPESAFE_KEY=... npm test   # also runs the live end-to-end test (spends 2 Apollo credits)
+TYPESAFE_KEY=... node eval/roles-eval.mjs  # compares role-question wordings on labelled roles
 ```
 
 Code map:
@@ -79,12 +88,14 @@ src/lib/pipeline.ts             lookup orchestration and reveals
 src/lib/apollo.ts, jev.ts       API clients
 src/lib/questions.ts            every Jev question, in one place
 src/lib/rules.ts                ICP text → rules; exact rule checks
-src/lib/mapping.ts              Jev answers → fit, persona, ranking
+src/lib/signals.ts              Apollo facts → why-now candidate signals
+src/lib/credits.ts              credit ledger, budget, Apollo balance parsing
+eval/roles-eval.mjs             wording eval for the per-role Jev question
+src/lib/mapping.ts              Jev answers → fit, persona, ranking, why now
 ```
 
 ## Roadmap
 
-- **Why now:** headcount growth, funding and hiring signals (Apollo already returns most of this)
 - **On-site signals:** pricing, careers and blog pages, with every signal linked to its source
 - Phone numbers through an optional self-hosted relay
 - "My Accounts" view, and "find more companies like my saved ones"

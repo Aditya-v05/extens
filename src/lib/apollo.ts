@@ -16,6 +16,11 @@ export async function checkKey(key: string): Promise<boolean> {
   return body?.is_logged_in === true;
 }
 
+/** Team credit balance. Needs a master API key; other keys get 403. */
+export async function getCreditUsage(key: string): Promise<unknown> {
+  return request('apollo', `${BASE}/usage_stats/credit_usage_stats`, { method: 'POST', headers: headers(key) });
+}
+
 export async function enrichOrganization(key: string, domain: string): Promise<ApolloOrg | null> {
   const url = `${BASE}/organizations/enrich?domain=${encodeURIComponent(domain)}`;
   const body = (await request('apollo', url, { headers: headers(key) })) as any;
@@ -40,6 +45,33 @@ export function mapOrganization(org: ApolloOrg, domain: string): Company {
     keywords: Array.isArray(org.keywords) ? org.keywords.slice(0, 20) : [],
     linkedin: org.linkedin_url ?? null,
   };
+}
+
+export interface JobPosting {
+  title: string;
+  url: string | null;
+  postedAt: string | null;
+  lastSeenAt: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+}
+
+export async function getJobPostings(key: string, organizationId: string): Promise<JobPosting[]> {
+  const url = `${BASE}/organizations/${encodeURIComponent(organizationId)}/job_postings?per_page=100`;
+  const body = (await request('apollo', url, { headers: headers(key) })) as any;
+  const jobs: any[] = Array.isArray(body?.organization_job_postings) ? body.organization_job_postings : [];
+  return jobs
+    .filter((j) => j?.title)
+    .map((j) => ({
+      title: String(j.title),
+      url: j.url ?? null,
+      postedAt: j.posted_at ?? null,
+      lastSeenAt: j.last_seen_at ?? null,
+      city: j.city ?? null,
+      state: j.state ?? null,
+      country: j.country ?? null,
+    }));
 }
 
 export interface PeopleQuery {
@@ -76,6 +108,8 @@ export async function searchPeople(key: string, q: PeopleQuery): Promise<Contact
 }
 
 export interface Reveal {
+  /** Apollo matched the person (and so charged a credit). */
+  found: boolean;
   lastName: string | null;
   email: string | null;
   emailStatus: string | null;
@@ -92,6 +126,7 @@ export async function revealPerson(key: string, personId: string): Promise<Revea
   })) as any;
   const p = body?.person ?? {};
   return {
+    found: !!body?.person,
     lastName: p.last_name ?? null,
     email: p.email ?? null,
     emailStatus: p.email_status ?? null,

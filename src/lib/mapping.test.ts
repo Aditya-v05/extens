@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Answer } from './jev';
-import { applyRanks, mapFit, mapPersona } from './mapping';
+import { applyRanks, mapFit, mapPersona, mapWhyNow } from './mapping';
 import type { Contact, Profile } from './types';
 
 const profile: Profile = {
@@ -49,5 +49,33 @@ describe('applyRanks', () => {
       rank_2: { type: 'score', score: 2.5, confidence: 1, probabilities: {} },
     });
     expect(ranked.map((x) => [x.apolloId, x.rank])).toEqual([['c', 83], ['a', 33], ['b', 100]]);
+  });
+});
+
+describe('mapWhyNow', () => {
+  const candidates = [
+    { kind: 'funding' as const, label: 'Raised $82M Series C', evidence: [], fact: '' },
+    { kind: 'hiring_volume' as const, label: '24 open roles', evidence: [], fact: '' },
+  ];
+  const jobs = [
+    { title: 'Deal Desk', url: null, postedAt: null, daysOpen: 10 },
+    { title: 'Customer Success Manager', url: 'https://j/1', postedAt: null, daysOpen: 5 },
+    { title: 'Support Specialist', url: 'https://j/2', postedAt: null, daysOpen: 3 },
+  ];
+  it('rolls relevant jobs into one hiring signal and sorts by relevance', () => {
+    const w = mapWhyNow({
+      timing: { type: 'score', score: 2, confidence: 0.6, probabilities: {} },
+      job_0: { type: 'noul', noul: 0.1 },
+      job_1: { type: 'noul', noul: 0.8 },
+      job_2: { type: 'noul', noul: 0.9 },
+      signal_0: { type: 'noul', noul: 0.4 },
+      signal_1: { type: 'noul', noul: 0.6 },
+    }, candidates, jobs, 'ok');
+    expect(w.timing).toBe(67);
+    expect(w.signals.map((s) => [s.label, s.relevance])).toEqual([
+      ['Hiring 2 relevant roles', 0.9], ['24 open roles', 0.6], ['Raised $82M Series C', 0.4],
+    ]);
+    expect(w.signals[0]!.detail).toBe('Support Specialist, Customer Success Manager');
+    expect(w.signals[0]!.evidence.map((e) => e.url)).toEqual(['https://j/2', 'https://j/1']);
   });
 });

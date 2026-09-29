@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser';
+import { DEFAULT_SETTINGS, addSpend, current, type Balance, type Ledger, type Settings, type SpendKind } from './credits';
 import type { Contact, Keys, LookupResult, Profile, ViewState } from './types';
 
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -9,6 +10,9 @@ type LocalSchema = {
   cache: Record<string, LookupResult>;
   saved: Record<string, LookupResult & { savedAt: number }>;
   reveals: Record<string, Pick<Contact, 'lastName' | 'email' | 'emailStatus' | 'linkedin' | 'revealedAt'> & { title?: string }>;
+  settings: Settings;
+  credits: Ledger;
+  balance: Balance;
 };
 
 async function getLocal<K extends keyof LocalSchema>(key: K): Promise<LocalSchema[K] | undefined> {
@@ -24,6 +28,31 @@ export const getKeys = () => getLocal('keys');
 export const setKeys = (k: Keys) => setLocal('keys', k);
 export const getProfile = () => getLocal('profile');
 export const setProfile = (p: Profile) => setLocal('profile', p);
+
+export const getSettings = async (): Promise<Settings> => ({ ...DEFAULT_SETTINGS, ...(await getLocal('settings')) });
+export const setSettings = (s: Settings) => setLocal('settings', s);
+
+export const getLedger = async () => current(await getLocal('credits'));
+
+// Spends can land concurrently (parallel API calls); queue the read-modify-write so none are lost.
+let spendQueue: Promise<unknown> = Promise.resolve();
+export function recordSpend(kind: SpendKind, n = 1): Promise<void> {
+  const next = spendQueue.then(async () => setLocal('credits', addSpend(await getLocal('credits'), kind, n)));
+  spendQueue = next.catch(() => {});
+  return next;
+}
+
+export const getBalance = () => getLocal('balance');
+export const setBalance = (b: Balance) => setLocal('balance', b);
+
+/** Subscribe to changes of some local keys (credits, settings, balance…). */
+export function onLocalChange(keys: (keyof LocalSchema)[], cb: () => void): () => void {
+  const listener = (changes: Record<string, unknown>, area: string) => {
+    if (area === 'local' && keys.some((k) => k in changes)) cb();
+  };
+  browser.storage.onChanged.addListener(listener);
+  return () => browser.storage.onChanged.removeListener(listener);
+}
 
 export async function getCached(domain: string): Promise<LookupResult | null> {
   const hit = (await getLocal('cache'))?.[domain];

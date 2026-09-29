@@ -84,6 +84,34 @@ export interface Contact {
   revealedAt?: number;
 }
 
+export interface Evidence {
+  label: string;
+  url?: string | null;
+  /** ISO date. */
+  date?: string | null;
+}
+
+export type SignalKind = 'hiring' | 'hiring_volume' | 'headcount_growth' | 'headcount_decline' | 'funding';
+
+export interface Signal {
+  kind: SignalKind;
+  /** Written by code from facts, never by a model. */
+  label: string;
+  detail?: string;
+  /** Jev probability that this signal makes now a good time, given what the seller sells. */
+  relevance: number;
+  evidence: Evidence[];
+}
+
+export interface WhyNow {
+  /** 0–100 from the Jev Score; null when there were no signals to judge. */
+  timing: number | null;
+  /** Sorted by relevance, most relevant first. */
+  signals: Signal[];
+  /** ok, unavailable (not on the key's plan), or off (turned off in Settings to save credits). */
+  jobsStatus: 'ok' | 'unavailable' | 'off';
+}
+
 export interface LookupResult {
   domain: string;
   fetchedAt: number;
@@ -93,6 +121,8 @@ export interface LookupResult {
   contacts: Contact[] | null;
   /** True when no persona title matched and we fell back to senior people. */
   contactsFallback?: boolean;
+  /** undefined on results cached before "why now" existed. */
+  whyNow?: WhyNow | null;
 }
 
 export type Service = 'apollo' | 'jev';
@@ -111,6 +141,7 @@ export type ViewState =
   | { status: 'needs_setup'; missing: ('keys' | 'profile')[] }
   | { status: 'not_company'; url: string | null }
   | { status: 'not_found'; domain: string }
+  | { status: 'over_budget'; domain: string; spent: number; budget: number; cost: number }
   | { status: 'loading'; domain: string; stage: Stage; partial: LookupResult | null }
   | { status: 'done'; domain: string; result: LookupResult; cached: boolean }
   | { status: 'error'; domain: string; error: LookupError; partial: LookupResult | null };

@@ -36,3 +36,15 @@
 .rank { display: flex; align-items: center; gap: 6px; }
 .rank .bar { width: 48px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
 .rank .bar > div { height: 100%; background: var(--accent); }
+
+.signals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.signals > li { display: flex; gap: 10px; align-items: flex-start; }
+.signals .icon { width: 18px; text-align: center; line-height: 1.45; }
+.signals.dim { opacity: 0.7; }
+.evidence { margin: 4px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 2px; }
+
+.credits { display: flex; flex-direction: column; gap: 4px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.credit-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.credit-bar > div { height: 100%; background: var(--accent); transition: width 0.3s; }
+.credit-bar.warn > div { background: var(--warn); }
+.credit-bar.bad > div { background: var(--bad); }
