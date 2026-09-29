@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import { DEFAULT_SETTINGS, addSpend, current, type Balance, type Ledger, type Settings, type SpendKind } from './credits';
 import { EMPTY_META, type AccountMeta } from './accounts';
+import type { DiscoverResult } from './discover';
 import type { Contact, Keys, LookupResult, Profile, ViewState } from './types';
 
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -15,6 +16,8 @@ type LocalSchema = {
   credits: Ledger;
   balance: Balance;
   accountMeta: Record<string, AccountMeta>;
+  discover: DiscoverResult;
+  dismissed: string[];
 };
 
 async function getLocal<K extends keyof LocalSchema>(key: K): Promise<LocalSchema[K] | undefined> {
@@ -85,6 +88,17 @@ export async function saveAccount(result: LookupResult): Promise<void> {
   const saved = await getSaved();
   saved[result.domain] = { ...result, savedAt: saved[result.domain]?.savedAt ?? Date.now() };
   await setLocal('saved', saved);
+}
+
+export const getDiscover = () => getLocal('discover');
+export const setDiscover = (d: DiscoverResult) => setLocal('discover', d);
+export const getDismissed = async () => (await getLocal('dismissed')) ?? [];
+
+/** Hide a Discover suggestion now and exclude it from future searches. */
+export async function dismissCandidate(domain: string): Promise<void> {
+  await setLocal('dismissed', [...new Set([...(await getDismissed()), domain])]);
+  const d = await getDiscover();
+  if (d) await setDiscover({ ...d, candidates: d.candidates.filter((c) => c.domain !== domain) });
 }
 
 export const getAccountMeta = async () => (await getLocal('accountMeta')) ?? {};

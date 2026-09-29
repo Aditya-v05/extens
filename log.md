@@ -4,6 +4,28 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Discover: companies like your best saved accounts
+
+- **Apollo findings:**
+  - `mixed_companies/search` takes `lookalike_organization_ids` (max 5) and costs 1 credit per page of up to 100.
+  - Results carry name, domain, logo, founding year, revenue and headcount growth, but no industry, headcount or description.
+  - The user's new **master key** works for `credit_usage_stats` (425 of 2,525 lead credits left, resets Oct 7), so the credit bar can show the real balance once it's pasted into Settings. The key isn't stored anywhere in the repo.
+- **Discover tab** in My Accounts:
+  - Seeds = top 5 saved accounts by priority, skipping "Not a fit", named before anything is spent.
+  - The ICP's headcount and country rules become search filters; saved, viewed, dismissed and seed domains are excluded.
+  - 50 suggestions for 1 credit, in Apollo's similarity order, each with founding year, revenue and 12-month headcount growth.
+  - *Look up (2 cr)* runs a full lookup, after which the row shows fit, timing and priority plus *Save*. *Dismiss* hides a suggestion and keeps it out of future searches.
+  - *Load 50 more* / *Search again* cost 1 each. An unchanged search is reused for 7 days, and opening the tab never spends.
+- **Ledger:** gains a `search` kind; old ledgers without it still add up.
+- **Bug found by the smoke test:** chrome.storage returns objects with sorted keys (`{max, min}`), so a search key made from stored rules didn't match one made from fresh rules. That could have made a cached search look stale and asked for another paid search. `searchKey` now uses plain arrays, with a test for it.
+- **Tests:**
+  - `discover.test.ts`: query building, labels, key stability including storage key order, seed choice, both response shapes, merging.
+  - `discover-run.test.ts`: 1 credit per page, repeats free, "more" loads page 2 without duplicates, no seeds, budget, dismissed exclusion.
+  - Smoke: seeds shown, similarity order, look-up cost shown, Dismiss remembered, no boxes. 23/23 pass.
+- **Live:** real Discover with the master key returned 403 lookalikes of Gorgias (50–500 employees, US), 49 new on page 1, in 1.4s, recorded as exactly 1 `search` credit.
+
+---
+
 ## 2026-09-29 — Contacts: best up front, the rest inside the panel, reveal all
 
 > "the drop down should be limited to the extension panel - and we should have the best contatc out first and the other contacts are in a dropdown - what happens if there are two very good contacts do both of them show up - and there should be a button to enrich all of them at one go"

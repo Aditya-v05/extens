@@ -74,6 +74,17 @@ export async function getJobPostings(key: string, organizationId: string): Promi
     }));
 }
 
+/** Organization search with lookalikes and filters. 1 credit per page. */
+export async function searchOrganizations(key: string, query: object): Promise<{ organizations: any[]; totalEntries: number }> {
+  const body = (await request('apollo', `${BASE}/mixed_companies/search`, {
+    method: 'POST',
+    headers: headers(key),
+    body: JSON.stringify(query),
+  })) as any;
+  const organizations = [...(body?.organizations ?? []), ...(body?.accounts ?? [])];
+  return { organizations, totalEntries: body?.pagination?.total_entries ?? organizations.length };
+}
+
 export interface PeopleQuery {
   organizationId: string;
   titles?: string[];

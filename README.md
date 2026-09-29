@@ -9,6 +9,8 @@ An open-source Chrome extension for anyone doing outbound. Open a company's webs
 3. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
 4. **Their email**, revealed on click, or all at once with *Reveal all* (it shows the credit cost first). The best contacts are shown up front (two if two are nearly as good); the rest are one click away.
 
+**Discover** (a tab in My Accounts) finds companies like your best saved accounts. It uses Apollo's lookalike search, already filtered by your ICP's size and country and skipping anything you've saved, viewed or dismissed. 50 suggestions cost 1 credit and are kept for 7 days; look up the ones you like (2 credits each).
+
 **My Accounts** (from the panel footer or Settings) is a full-page list of saved and recently viewed companies. It's ranked by priority (60% fit + 40% timing), with a status (New / Contacted / Replied / Not a fit), notes, search, a "Hot only" filter, per-account refresh, and CSV export.
 
 Company and people data come from **Apollo**. Judgments come from **Jev**, [TypeSafe](https://typesafe.ai)'s System One model. You bring both API keys.
@@ -28,6 +30,7 @@ Per [Apollo's API pricing](https://docs.apollo.io/docs/api-pricing):
 |---|---|
 | New company lookup | **2 Apollo credits**: 1 for the company, 1 for job postings. Turn off hiring signals in Settings to make it 1 |
 | People search | Free |
+| Discover search | 1 credit per 50 suggestions (repeat visits within 7 days are free) |
 | Fit, persona, ranking, why now | Three Jev calls, a few thousand input tokens per lookup |
 | Reveal email | **1 Apollo credit**, and the button says so |
 
@@ -94,6 +97,7 @@ src/entrypoints/sidepanel/      the panel UI
 src/entrypoints/options/        setup, rules editor, credits
 src/entrypoints/accounts/       My Accounts page
 src/lib/accounts.ts             priority, ranking, filters for My Accounts
+src/lib/discover.ts             lookalike query, seeds, candidate merging (Discover)
 src/lib/pipeline.ts             lookup orchestration and reveals
 src/lib/apollo.ts, jev.ts       API clients
 src/lib/questions.ts            every Jev question, in one place
@@ -109,7 +113,6 @@ src/lib/mapping.ts              Jev answers → fit, persona, ranking, why now
 ## Roadmap
 
 - Phone numbers through an optional self-hosted relay
-- "Find more companies like my saved ones"
 
 ## License
 

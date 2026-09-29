@@ -4,7 +4,7 @@ import * as apollo from '@/lib/apollo';
 import { toLookupError, describeError } from '@/lib/errors';
 import * as jev from '@/lib/jev';
 import type { KeyTest, Message } from '@/lib/messages';
-import { refreshBalance, revealContacts, runLookup } from '@/lib/pipeline';
+import { refreshBalance, revealContacts, runDiscover, runLookup } from '@/lib/pipeline';
 import { domainFromUrl } from '@/lib/resolver';
 import { setView } from '@/lib/storage';
 
@@ -36,6 +36,9 @@ export default defineBackground(() => {
       case 'refreshAccount':
         // From My Accounts: no side panel and no tab, so it runs headless (no website signals).
         runLookup(null, msg.domain, { force: true, allowOverBudget: msg.allowOverBudget }).then(sendResponse);
+        return true;
+      case 'discover':
+        runDiscover({ more: msg.more, fresh: msg.fresh, allowOverBudget: msg.allowOverBudget }).then(sendResponse);
         return true;
       case 'refreshBalance':
         refreshBalance(true).then(() => sendResponse({ ok: true }));

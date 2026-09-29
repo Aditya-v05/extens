@@ -60,6 +60,25 @@ export const saved = {
   'intercom.com': { ...results['intercom.com'], savedAt: now - 20 * DAY },
   'gorgias.com': { ...results['gorgias.com'], savedAt: now - 1 * DAY },
 };
+export const profile = {
+  answers: { sells: 'AI support QA software for SaaS companies.', icp: 'Series A–C SaaS companies, 50–500 employees, based in the US, with large customer support teams.', buyers: 'VP Customer Experience, Head of Support, COO' },
+  rules: { headcount: { min: 50, max: 500 }, countries: ['United States'], checks: ['Series A–C SaaS companies', 'large customer support teams'], personas: ['VP Customer Experience', 'Head of Support', 'COO'] },
+  updatedAt: now,
+};
+
+// A Discover search as stored after one page (real lookalikes of Gorgias from 2026-09-29).
+// Key = seeds Linear + Gorgias (Intercom is "Not a fit") with the profile's rules; see searchKey().
+export const discover = {
+  key: JSON.stringify([['gorgias.com', 'linear.app'], [50, 500], ['United States']]),
+  seeds: [{ apolloId: 'linear.app', name: 'Linear', domain: 'linear.app' }, { apolloId: 'gorgias.com', name: 'Gorgias', domain: 'gorgias.com' }],
+  filtersLabel: '50–500 employees, United States', fetchedAt: now - 3600e3, page: 1, totalEntries: 403,
+  candidates: [
+    { apolloId: 'hs', name: 'Help Scout', domain: 'helpscout.com', logo: null, foundedYear: 2011, revenue: '35M', growth12: -0.037, linkedin: null },
+    { apolloId: 'ku', name: 'Kustomer', domain: 'kustomer.com', logo: null, foundedYear: 2015, revenue: '53M', growth12: 0.123, linkedin: null },
+    { apolloId: 'ne', name: 'Netomi', domain: 'netomi.com', logo: null, foundedYear: 2016, revenue: '46.6M', growth12: 0.216, linkedin: null },
+  ],
+};
+
 export const accountMeta = {
   'gorgias.com': { status: 'contacted', note: 'Emailed Maya on Monday; follow up Thursday.', updatedAt: now },
   'intercom.com': { status: 'not_fit', note: '', updatedAt: now },

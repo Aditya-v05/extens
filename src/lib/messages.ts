@@ -1,10 +1,11 @@
 import { browser } from 'wxt/browser';
-import type { RevealOutcome } from './pipeline';
+import type { DiscoverOutcome, RevealOutcome } from './pipeline';
 import type { Keys, ViewState } from './types';
 
 export type Message =
   | { type: 'lookup'; windowId: number; domain: string; force?: boolean; allowOverBudget?: boolean }
   | { type: 'refreshBalance' }
+  | { type: 'discover'; more?: boolean; fresh?: boolean; allowOverBudget?: boolean }
   | { type: 'reveal'; windowId: number | null; domain: string; personIds: string[] }
   | { type: 'refreshAccount'; domain: string; allowOverBudget?: boolean }
   | { type: 'testKeys'; keys: Keys };
@@ -15,6 +16,8 @@ export type Reply<M extends Message> = M extends { type: 'lookup' }
   ? { ok: true }
   : M extends { type: 'refreshBalance' }
     ? { ok: true }
+  : M extends { type: 'discover' }
+    ? DiscoverOutcome
   : M extends { type: 'refreshAccount' }
     ? ViewState
   : M extends { type: 'reveal' }

@@ -15,9 +15,10 @@ import { toCsv } from '@/lib/csv';
 import { describeError } from '@/lib/errors';
 import { send } from '@/lib/messages';
 import * as store from '@/lib/storage';
+import { DiscoverTab } from './Discover';
 import './accounts.css';
 
-type Tab = 'saved' | 'recent';
+type Tab = 'saved' | 'recent' | 'discover';
 
 function useAccounts() {
   const [data, setData] = useState<ReturnType<typeof buildRows> & { loaded: boolean }>({ saved: [], recent: [], loaded: false });
@@ -40,7 +41,7 @@ export default function Accounts() {
   const [filters, setFilters] = useState<Filters>({ query: '', status: 'all', hotOnly: false });
 
   const rows = useMemo(
-    () => sortRows(filterRows(tab === 'saved' ? saved : recent, tab === 'saved' ? filters : { ...filters, status: 'all' }), sort),
+    () => sortRows(filterRows(tab === 'recent' ? recent : saved, tab === 'saved' ? filters : { ...filters, status: 'all' }), sort),
     [tab, saved, recent, filters, sort],
   );
 
@@ -77,7 +78,12 @@ export default function Accounts() {
         <button role="tab" aria-selected={tab === 'recent'} className={tab === 'recent' ? 'active' : ''} onClick={() => setTab('recent')}>
           Recently viewed <span className="count">{recent.length}</span>
         </button>
+        <button role="tab" aria-selected={tab === 'discover'} className={tab === 'discover' ? 'active' : ''} onClick={() => setTab('discover')}>
+          Discover
+        </button>
       </nav>
+
+      {tab === 'discover' ? <DiscoverTab lookupCost={lookupCost(credits.settings)} /> : <>
 
       <div className="toolbar row wrap">
         <input
@@ -115,6 +121,7 @@ export default function Accounts() {
           {rows.map((r) => <AccountRowView key={r.domain} row={r} cost={lookupCost(credits.settings)} />)}
         </div>
       )}
+      </>}
     </main>
   );
 }

@@ -6,14 +6,16 @@ describe('ledger', () => {
     let l = addSpend(undefined, 'company', 1, '2026-09');
     l = addSpend(l, 'jobs', 1, '2026-09');
     l = addSpend(l, 'reveal', 2, '2026-09');
-    expect(l).toEqual({ month: '2026-09', company: 1, jobs: 1, reveal: 2 });
-    expect(totalSpent(l)).toBe(4);
+    l = addSpend(l, 'search', 1, '2026-09');
+    expect(l).toEqual({ month: '2026-09', company: 1, jobs: 1, reveal: 2, search: 1 });
+    expect(totalSpent(l)).toBe(5);
+    expect(totalSpent({ month: '2026-09', company: 1, jobs: 1, reveal: 1 })).toBe(3); // ledger from before Discover
   });
 
   it('starts fresh in a new month', () => {
     const sept = addSpend(undefined, 'company', 5, '2026-09');
     expect(current(sept, '2026-10')).toEqual(emptyLedger('2026-10'));
-    expect(addSpend(sept, 'reveal', 1, '2026-10')).toEqual({ month: '2026-10', company: 0, jobs: 0, reveal: 1 });
+    expect(addSpend(sept, 'reveal', 1, '2026-10')).toEqual({ month: '2026-10', company: 0, jobs: 0, reveal: 1, search: 0 });
   });
 
   it('formats month keys', () => expect(monthKey(new Date(2026, 0, 5))).toBe('2026-01'));

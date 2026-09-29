@@ -1,6 +1,10 @@
 import { browser } from 'wxt/browser';
 import * as apollo from './apollo';
 import { lookupCost, overBudget, parseBalance, totalSpent, type Settings } from './credits';
+import {
+  buildLookalikeQuery, filtersLabel, mapCandidate, mergeCandidates, pickSeeds, searchKey,
+  type Candidate, type DiscoverResult,
+} from './discover';
 import { applyReveals, type RevealPatch } from './contacts';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
@@ -291,6 +295,62 @@ export async function revealContacts(windowId: number | null, domain: string, pe
 
 /** Parallel Apollo enrichment requests during "reveal all". */
 const REVEAL_CONCURRENCY = 3;
+
+// ---------- discover ----------
+
+export type DiscoverOutcome =
+  | { status: 'ok'; result: DiscoverResult; cached: boolean }
+  | { status: 'needs_setup' }
+  | { status: 'no_seeds' }
+  | { status: 'over_budget'; spent: number; budget: number; cost: number }
+  | { status: 'error'; error: LookupError };
+
+const DISCOVER_TTL_MS = 7 * DAY;
+
+/**
+ * Find companies like the user's best saved accounts, filtered by their exact ICP rules.
+ * One Apollo search page = 1 credit; an unchanged search within 7 days is served from storage.
+ */
+export async function runDiscover(opts: { more?: boolean; fresh?: boolean; allowOverBudget?: boolean } = {}): Promise<DiscoverOutcome> {
+  const [keys, profile, saved, meta, cache, dismissed, previous] = await Promise.all([
+    store.getKeys(), store.getProfile(), store.getSaved(), store.getAccountMeta(), store.getAllCached(),
+    store.getDismissed(), store.getDiscover(),
+  ]);
+  if (!keys?.apollo || !profile) return { status: 'needs_setup' };
+  const seeds = pickSeeds(saved, meta);
+  if (!seeds.length) return { status: 'no_seeds' };
+
+  const key = searchKey(profile.rules, seeds);
+  const exclude = [...Object.keys(saved), ...Object.keys(cache), ...dismissed, ...seeds.map((s) => s.domain)];
+  const excludeSet = new Set(exclude);
+  const same = !opts.fresh && previous && previous.key === key && Date.now() - previous.fetchedAt < DISCOVER_TTL_MS;
+  if (same && !opts.more) {
+    const result = { ...previous, candidates: mergeCandidates(previous.candidates, [], excludeSet) };
+    return { status: 'ok', result, cached: true };
+  }
+
+  const [settings, ledger] = await Promise.all([store.getSettings(), store.getLedger()]);
+  if (!opts.allowOverBudget && overBudget(ledger, settings, 1)) {
+    return { status: 'over_budget', spent: totalSpent(ledger), budget: settings.monthlyBudget!, cost: 1 };
+  }
+  const page = same && opts.more ? previous.page + 1 : 1;
+  try {
+    const { organizations, totalEntries } = await apollo.searchOrganizations(
+      keys.apollo, buildLookalikeQuery(profile.rules, seeds, exclude, page),
+    );
+    await store.recordSpend('search');
+    refreshBalance();
+    const incoming = organizations.map(mapCandidate).filter((c): c is Candidate => c !== null);
+    const result: DiscoverResult = {
+      key, seeds, filtersLabel: filtersLabel(profile.rules), fetchedAt: same ? previous.fetchedAt : Date.now(), page, totalEntries,
+      candidates: mergeCandidates(same && opts.more ? previous.candidates : [], incoming, excludeSet),
+    };
+    await store.setDiscover(result);
+    return { status: 'ok', result, cached: false };
+  } catch (err) {
+    return { status: 'error', error: toLookupError(err) };
+  }
+}
 
 // ---------- credit balance ----------
 

@@ -1,10 +1,10 @@
 /**
  * Apollo credit accounting. Per Apollo's API pricing: organization enrichment = 1 credit,
- * job postings = 1 credit per page, people enrichment = 1 credit when it returns data.
- * People API search is free.
+ * job postings = 1 credit per page, people enrichment = 1 credit when it returns data,
+ * organization search (Discover) = 1 credit per page. People API search is free.
  */
 
-export type SpendKind = 'company' | 'jobs' | 'reveal';
+export type SpendKind = 'company' | 'jobs' | 'reveal' | 'search';
 
 /** What Sift itself has spent this calendar month (local time). */
 export interface Ledger {
@@ -12,6 +12,8 @@ export interface Ledger {
   company: number;
   jobs: number;
   reveal: number;
+  /** Discover searches; missing on ledgers written before Discover existed. */
+  search?: number;
 }
 
 export interface Settings {
@@ -35,7 +37,7 @@ export function monthKey(d = new Date()): string {
 }
 
 export function emptyLedger(month = monthKey()): Ledger {
-  return { month, company: 0, jobs: 0, reveal: 0 };
+  return { month, company: 0, jobs: 0, reveal: 0, search: 0 };
 }
 
 /** A ledger from a previous month counts as empty. */
@@ -45,10 +47,10 @@ export function current(ledger: Ledger | undefined, month = monthKey()): Ledger 
 
 export function addSpend(ledger: Ledger | undefined, kind: SpendKind, n = 1, month = monthKey()): Ledger {
   const l = current(ledger, month);
-  return { ...l, [kind]: l[kind] + n };
+  return { ...l, [kind]: (l[kind] ?? 0) + n };
 }
 
-export const totalSpent = (l: Ledger) => l.company + l.jobs + l.reveal;
+export const totalSpent = (l: Ledger) => l.company + l.jobs + l.reveal + (l.search ?? 0);
 
 /** Credits a fresh (uncached) lookup will spend. */
 export const lookupCost = (s: Settings) => 1 + (s.fetchJobs ? 1 : 0);

@@ -96,6 +96,23 @@ A full-tab page (`accounts.html`), opened from the panel footer or Settings.
 - **Refresh:** a *headless* lookup in the background worker (`runLookup(null, …)`), with no panel and no tab, so no website signals. The budget check still applies (the page asks before going over).
 - **CSV export:** moved here; adds status and note columns.
 
+### 4.5 Discover (built)
+A tab in My Accounts (`src/entrypoints/accounts/Discover.tsx`, logic in `src/lib/discover.ts` and `runDiscover`).
+- **Seeds:** up to 5 saved accounts with the highest priority, never ones marked "Not a fit". The tab names them before anything is spent.
+- **Search:** `POST /api/v1/mixed_companies/search` with
+  - `lookalike_organization_ids` = the seeds;
+  - the ICP's exact rules as filters (`organization_num_employees_ranges`, `organization_locations`);
+  - `not_organization_websites_list` = saved, recently viewed, dismissed and seed domains.
+- **Cost:** 50 per page = **1 credit**.
+  - Opening the tab never spends; the user clicks *Find 50 similar companies (1 credit)*.
+  - An unchanged search (same seeds and rules) is served from storage for 7 days.
+  - *Load 50 more* / *Search again* cost 1 each, and ask before going over budget.
+- **Response:** name, domain, logo, founding year, revenue and headcount growth only. There's no industry, headcount or description, so there's no Jev fit on the list itself. Suggestions keep Apollo's similarity order.
+  - *Look up (2 cr)* runs the normal headless lookup; the row then shows fit, timing and priority, plus *Save*.
+  - *Dismiss* hides a suggestion and excludes it from future searches.
+- **Search key:** built from plain arrays, because chrome.storage returns objects with alphabetically sorted keys.
+- **Live check (2026-09-29, master key):** lookalikes of Gorgias within 50–500 employees and the US gave 403 matches, 49 new on page 1, in 1.4s for 1 credit.
+
 ## 5. Architecture
 
 ```
@@ -301,7 +318,8 @@ Sanity check: for an example seller of support QA software, Linear scored 2.1/4 
 - ~~**v1.5 — Why now**~~ built. See §7, Decision 2.
 - ~~**v2 — On-site signals**~~ built. See §7, "Website signals".
 - ~~**My Accounts**~~ built. See "My Accounts" in §4.
-- **Next:** optional self-hosted relay for phone reveals; "find more companies like my saved ones."
+- ~~**Find more like my saved ones**~~ built. See "Discover" in §4.
+- **Next:** optional self-hosted relay for phone reveals.
 
 ## 14. Open questions
 

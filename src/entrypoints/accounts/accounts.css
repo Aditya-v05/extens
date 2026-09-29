@@ -78,3 +78,14 @@ button.small { font-size: 12.5px; }
   .details { padding-left: 0; }
   .toolbar .search { flex-basis: 100%; }
 }
+
+/* Discover: numbered in Apollo's similarity order, separated by hairlines. */
+.discover .lede { margin: 0; max-width: 72ch; }
+.discover.empty { padding: 20px 0; }
+.discover.empty p { margin: 6px 0 0; }
+.candidates { list-style: none; margin: 0; padding: 0; counter-reset: cand; border-top: 1px solid var(--border); }
+.candidate { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); counter-increment: cand; }
+.candidate::before { content: counter(cand); width: 24px; text-align: right; color: var(--muted); font-size: 12.5px; padding-top: 5px; flex-shrink: 0; }
+.candidate .logo { margin-top: 2px; }
+.candidate .looked-up { margin-top: 2px; color: var(--accent); font-weight: 500; }
+.candidate .actions { gap: 16px; white-space: nowrap; }

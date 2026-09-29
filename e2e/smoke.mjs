@@ -4,7 +4,7 @@
 import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { accountMeta, results, saved } from './seed.mjs';
+import { accountMeta, discover, profile, results, saved } from './seed.mjs';
 
 const EXT = fileURLToPath(new URL('../.output/chrome-mv3', import.meta.url));
 const OUT = fileURLToPath(new URL('./screenshots', import.meta.url));
@@ -20,15 +20,25 @@ const id = new URL(sw.url()).host;
 const errors = [];
 ctx.on('page', (p) => { p.on('pageerror', (e) => errors.push(`${p.url()}: ${e.message}`)); p.on('console', (m) => m.type() === 'error' && errors.push(`${p.url()}: ${m.text()}`)); });
 
+// "No boxes, only lines": nothing may have a border on all four sides (checkboxes excepted).
+const boxed = async (pg) => pg.evaluate(() =>
+  [...document.querySelectorAll('body *')]
+    .filter((el) => el.getClientRects().length && !(el instanceof HTMLInputElement && el.type === 'checkbox'))
+    .filter((el) => {
+      const cs = getComputedStyle(el);
+      return ['Top', 'Right', 'Bottom', 'Left'].every((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== 'none');
+    })
+    .map((el) => `${el.tagName.toLowerCase()}.${el.className}`));
+
 const page = await ctx.newPage();
 await page.goto(`chrome-extension://${id}/accounts.html`);
-await page.evaluate(async ({ results, saved, accountMeta }) => {
+await page.evaluate(async ({ results, saved, accountMeta, profile, discover }) => {
   await chrome.storage.local.set({
-    keys: { apollo: 'x', typesafe: 'y' }, cache: results, saved, accountMeta,
+    keys: { apollo: 'x', typesafe: 'y' }, cache: results, saved, accountMeta, profile, discover,
     credits: { month: new Date().toISOString().slice(0, 7), company: 14, jobs: 12, reveal: 3 },
     settings: { monthlyBudget: 100, fetchJobs: true, scanSite: true },
   });
-}, { results, saved, accountMeta });
+}, { results, saved, accountMeta, profile, discover });
 await page.reload();
 await page.waitForSelector('.account');
 check((await page.title()) === 'My Accounts – Sift', 'pages are named Sift');
@@ -54,6 +64,21 @@ await page.click('text=Recently viewed');
 await page.waitForTimeout(100);
 check((await page.locator('.company strong').allInnerTexts()).join() === 'Notion', 'recently viewed lists unsaved lookups');
 await page.click('text=Saved');
+
+// Discover: lookalikes of the best saved accounts (seeded search, so no API call and no credit).
+await page.click('role=tab[name="Discover"]');
+await page.waitForSelector('.candidate');
+check((await page.locator('.discover .lede strong').innerText()) === 'Linear, Gorgias', 'Discover seeds from the best saved accounts, skipping Not a fit');
+check((await page.locator('.candidate strong').allInnerTexts()).join() === 'Help Scout,Kustomer,Netomi', 'Discover lists suggestions in Apollo similarity order');
+check((await page.locator('.candidate button', { hasText: 'Look up (2 cr)' }).count()) === 3, 'each suggestion can be looked up, with its cost');
+await page.screenshot({ path: `${OUT}/discover.png`, fullPage: true });
+await page.locator('.candidate', { hasText: 'Kustomer' }).locator('button', { hasText: 'Dismiss' }).click();
+await page.waitForTimeout(200);
+const dismissed = await page.evaluate(async () => (await chrome.storage.local.get('dismissed')).dismissed);
+check((await page.locator('.candidate').count()) === 2 && dismissed?.includes('kustomer.com'), 'Dismiss hides a suggestion and remembers it');
+const discoverBoxes = await boxed(page);
+check(discoverBoxes.length === 0, `no boxes on Discover${discoverBoxes.length ? `: ${discoverBoxes.slice(0, 5).join(', ')}` : ''}`);
+await page.click('role=tab[name="Saved 3"]');
 
 // Narrow window layout.
 await page.setViewportSize({ width: 420, height: 900 });
@@ -107,15 +132,6 @@ await opts.waitForSelector('text=Apollo credits');
 await opts.screenshot({ path: `${OUT}/settings.png`, fullPage: true });
 
 check(await panel.locator('text=Why now').count() > 0, 'side panel renders a lookup');
-// "No boxes, only lines": nothing may have a border on all four sides (checkboxes excepted).
-const boxed = async (pg) => pg.evaluate(() =>
-  [...document.querySelectorAll('body *')]
-    .filter((el) => el.getClientRects().length && !(el instanceof HTMLInputElement && el.type === 'checkbox'))
-    .filter((el) => {
-      const cs = getComputedStyle(el);
-      return ['Top', 'Right', 'Bottom', 'Left'].every((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== 'none');
-    })
-    .map((el) => `${el.tagName.toLowerCase()}.${el.className}`));
 for (const [name, pg] of [['panel', panel], ['My Accounts', page], ['settings', opts]]) {
   const found = await boxed(pg);
   check(found.length === 0, `no boxes on ${name}${found.length ? `: ${found.slice(0, 5).join(', ')}` : ''}`);
