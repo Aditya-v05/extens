@@ -1,7 +1,8 @@
+import { EMPTY_META, STATUS_LABELS, type AccountMeta } from './accounts';
 import type { LookupResult } from './types';
 
 const HEADER = [
-  'company', 'domain', 'fit_score', 'timing_score', 'top_signal', 'best_persona', 'first_name', 'last_name', 'title', 'contact_rank',
+  'company', 'domain', 'status', 'note', 'fit_score', 'timing_score', 'top_signal', 'best_persona', 'first_name', 'last_name', 'title', 'contact_rank',
   'email', 'email_status', 'linkedin', 'saved_at',
 ];
 
@@ -11,12 +12,13 @@ function cell(v: unknown): string {
 }
 
 /** One row per contact; accounts with no contacts still get one row. */
-export function toCsv(saved: (LookupResult & { savedAt: number })[]): string {
+export function toCsv(saved: (LookupResult & { savedAt: number })[], meta: Record<string, AccountMeta> = {}): string {
   const rows: unknown[][] = [];
   for (const a of saved) {
     const top = a.whyNow?.signals.find((s) => s.relevance >= 0.5);
+    const m = meta[a.domain] ?? EMPTY_META;
     const base = [
-      a.company.name, a.domain, a.fit?.score ?? '', a.whyNow?.timing ?? '',
+      a.company.name, a.domain, STATUS_LABELS[m.status], m.note, a.fit?.score ?? '', a.whyNow?.timing ?? '',
       top ? [top.label, top.detail].filter(Boolean).join(': ') : '', a.persona?.chosen ?? '',
     ];
     const savedAt = new Date(a.savedAt).toISOString();

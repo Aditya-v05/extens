@@ -10,8 +10,8 @@ describe('toCsv', () => {
       whyNow: { timing: 67, jobsStatus: 'ok', signals: [{ label: 'Hiring 2 relevant roles', detail: 'CSM, Support', relevance: 0.8 }] },
       contacts: [{ firstName: 'Ann', lastName: 'Lee', title: 'COO "ops"', rank: 90, email: 'ann@acme.com', emailStatus: 'verified' }],
     } as unknown as LookupResult & { savedAt: number };
-    const lines = toCsv([acct]).split('\n');
+    const lines = toCsv([acct], { 'acme.com': { status: 'contacted', note: 'Met at SaaStr', updatedAt: 1 } }).split('\n');
     expect(lines).toHaveLength(2);
-    expect(lines[1]).toBe('"Acme, Inc.",acme.com,80,67,"Hiring 2 relevant roles: CSM, Support",COO,Ann,Lee,"COO ""ops""",90,ann@acme.com,verified,,2026-09-29T00:00:00.000Z');
+    expect(lines[1]).toBe('"Acme, Inc.",acme.com,Contacted,Met at SaaStr,80,67,"Hiring 2 relevant roles: CSM, Support",COO,Ann,Lee,"COO ""ops""",90,ann@acme.com,verified,,2026-09-29T00:00:00.000Z');
   });
 });

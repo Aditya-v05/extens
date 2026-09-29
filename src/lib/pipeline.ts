@@ -35,12 +35,17 @@ export interface LookupOptions {
   tabId?: number;
 }
 
-export async function runLookup(windowId: number, domain: string, opts: LookupOptions = {}): Promise<void> {
+/**
+ * Look up a company. With a windowId, progress streams to that window's side panel; with null
+ * (My Accounts refresh) it runs headless. Returns the final state either way.
+ */
+export async function runLookup(windowId: number | null, domain: string, opts: LookupOptions = {}): Promise<ViewState> {
   const { force = false, allowOverBudget = false, tabId } = opts;
   const token = Symbol(domain);
-  runs.set(windowId, token);
-  const show = async (v: ViewState) => {
-    if (runs.get(windowId) === token) await store.setView(windowId, v);
+  if (windowId !== null) runs.set(windowId, token);
+  const show = async (v: ViewState): Promise<ViewState> => {
+    if (windowId !== null && runs.get(windowId) === token) await store.setView(windowId, v);
+    return v;
   };
 
   const [keys, profile] = await Promise.all([store.getKeys(), store.getProfile()]);
@@ -75,9 +80,11 @@ export async function runLookup(windowId: number, domain: string, opts: LookupOp
     });
     if (!partial) return show({ status: 'not_found', domain });
     await store.putCached(partial);
-    await show({ status: 'done', domain, result: partial, cached: false });
+    // A saved account follows its latest lookup (status and notes live separately).
+    if ((await store.getSaved())[domain]) await store.saveAccount(partial);
+    return await show({ status: 'done', domain, result: partial, cached: false });
   } catch (err) {
-    await show({ status: 'error', domain, error: toLookupError(err), partial });
+    return await show({ status: 'error', domain, error: toLookupError(err), partial });
   } finally {
     refreshBalance();
   }
@@ -224,7 +231,7 @@ async function findPeople(key: string, organizationId: string, personas: string[
 // ---------- reveal ----------
 
 /** Spend one Apollo credit to reveal a person, and patch every copy of them we hold. */
-export async function revealContact(windowId: number, domain: string, personId: string): Promise<void> {
+export async function revealContact(windowId: number | null, domain: string, personId: string): Promise<void> {
   const keys = await store.getKeys();
   if (!keys?.apollo) throw new Error('Missing Apollo key');
   const r = await apollo.revealPerson(keys.apollo, personId);
@@ -249,6 +256,7 @@ export async function revealContact(windowId: number, domain: string, personId: 
   if (cached) await store.putCached(patch(cached));
   const saved = (await store.getSaved())[domain];
   if (saved) await store.saveAccount(patch(saved));
+  if (windowId === null) return;
   const view = await store.getView(windowId);
   if (view.status === 'done' && view.domain === domain) {
     await store.setView(windowId, { ...view, result: patch(view.result) });

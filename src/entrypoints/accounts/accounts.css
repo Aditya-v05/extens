@@ -1,0 +1,87 @@
+.accounts {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 16px 64px;
+  gap: 16px;
+}
+.accounts h1 { font-size: 24px; }
+.accounts header p { margin: 2px 0 0; }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+.block { display: block; }
+.ok { color: var(--good); }
+.err { color: var(--bad); }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
+.tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 12px; color: var(--muted); }
+.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+.tabs .count { font-size: 12px; background: var(--surface); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+
+.toolbar { gap: 12px; }
+.toolbar .search { flex: 1; min-width: 220px; }
+select {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
+}
+.checkbox { font-weight: 400; cursor: pointer; margin: 0; }
+.checkbox input { width: auto; }
+
+/* Columns: priority | company | fit | why now | contact | status | updated | actions */
+.table { display: flex; flex-direction: column; }
+.thead, .cells {
+  display: grid;
+  grid-template-columns: 56px minmax(200px, 2fr) 56px minmax(150px, 1.4fr) minmax(150px, 1.4fr) 120px 90px 190px;
+  gap: 12px;
+  align-items: center;
+}
+.thead { font-size: 12px; color: var(--muted); padding: 0 12px 8px; border-bottom: 1px solid var(--border); }
+.account { border-bottom: 1px solid var(--border); padding: 10px 12px; }
+.account.open { background: var(--surface); }
+
+.priority {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px;
+  font-weight: 700; background: var(--surface); border: 1px solid var(--border);
+}
+.priority.good { background: var(--good-bg); color: var(--good); border-color: transparent; }
+.priority.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.priority.bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+
+.company { display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; }
+.link-like { border: none; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+.link-like:hover strong { text-decoration: underline; }
+.logo { width: 32px; height: 32px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--border); flex-shrink: 0; }
+.logo.placeholder { display: grid; place-items: center; font-weight: 600; background: var(--surface); }
+
+.num { font-weight: 600; }
+.num.good { color: var(--good); }
+.num.warn { color: var(--warn); }
+.num.bad { color: var(--bad); }
+.why, .contact-cell { min-width: 0; overflow: hidden; }
+.why .block, .contact-cell .block { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.why .pill { margin-bottom: 2px; }
+.stale { color: var(--warn); }
+.actions { justify-content: flex-end; gap: 4px; }
+.small.btn, button.small { padding: 4px 8px; font-size: 12px; }
+
+.details {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;
+  padding: 14px 0 4px 68px;
+}
+.details h2 { margin-bottom: 6px; }
+.details .note { grid-column: 1 / -1; }
+.plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.contact-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.contact-line code { font-size: 12px; }
+.empty { padding: 24px; }
+.empty p { margin: 6px 0 0; }
+
+/* Narrow windows: stack each account as a card. */
+@media (max-width: 900px) {
+  .thead { display: none; }
+  .cells { grid-template-columns: 48px 1fr auto; grid-auto-rows: auto; }
+  .cells > .why, .cells > .contact-cell { grid-column: 2 / -1; }
+  .cells > :nth-child(6), .cells > :nth-child(7) { grid-column: 2 / 3; }
+  .cells > .actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .details { padding-left: 0; }
+  .toolbar .search { flex-basis: 100%; }
+}

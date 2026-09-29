@@ -69,6 +69,28 @@ Phone numbers · automated outbound · email/opener generation · sequences · C
 - **Save account:** stores the snapshot (company, score, contacts, revealed emails) locally.
 - **Export:** CSV of saved accounts and contacts from Settings.
 
+### 4.4 My Accounts (built)
+A full-tab page (`accounts.html`), opened from the panel footer or Settings.
+- **Tabs:**
+  - *Saved*.
+  - *Recently viewed*: unsaved lookups still in the 7-day cache, with ☆ Save.
+- **Row:**
+  - **Priority** = `0.6 × fit + 0.4 × timing`; missing timing counts as 0.
+  - Fit %.
+  - Why-now label and top signal (relevance ≥ 0.5).
+  - Best contact (email when revealed).
+  - Status: New / Contacted / Replied / Not a fit.
+  - Updated: flagged stale after 14 days.
+  - *Refresh · 2 cr* and *Remove*.
+- **Expanded row:** fit checklist, all signals with sources, top 6 contacts with *Reveal · 1 cr*, and a note.
+- **Controls:** search (company, domain, industry, note, persona, every contact title, signal labels and details), status filter, "Hot only" (timing ≥ 67), and sort by priority / fit / timing / recently saved.
+- **Data:**
+  - Status and notes live in `accountMeta`, separate from the lookup snapshot, so refreshes and re-saves keep them.
+  - Any successful lookup of a saved domain updates the saved snapshot; `savedAt` is preserved.
+  - If the cache holds a newer lookup than the saved snapshot, the list shows the newer one.
+- **Refresh:** a *headless* lookup in the background worker (`runLookup(null, …)`), with no panel and no tab, so no website signals. The budget check still applies (the page asks before going over).
+- **CSV export:** moved here; adds status and note columns.
+
 ## 5. Architecture
 
 ```
@@ -211,6 +233,7 @@ keys:      { apollo, typesafe }          // local only, never synced
 profile:   { rawAnswers, rules, personas, updatedAt }
 cache:     { [domain]: ResultObject }    // 7-day TTL
 saved:     { [domain]: ResultObject & { savedAt } }
+accountMeta: { [domain]: { status, note, updatedAt } }   // survives refresh / unsave
 reveals:   { [apolloPersonId]: { email, status, revealedAt } }
 settings:  { monthlyBudget: number | null, fetchJobs: boolean, scanSite: boolean }
 credits:   { month: "YYYY-MM", company, jobs, reveal }   // spent by ICP Scout
@@ -260,7 +283,8 @@ Sanity check: for an example seller of support QA software, Linear scored 2.1/4 
 
 - ~~**v1.5 — Why now**~~ built. See §7, Decision 2.
 - ~~**v2 — On-site signals**~~ built. See §7, "Website signals".
-- **v2+:** optional self-hosted relay for phone reveals, a "My Accounts" view, and "find more companies like my saved ones."
+- ~~**My Accounts**~~ built. See "My Accounts" in §4.
+- **Next:** optional self-hosted relay for phone reveals; "find more companies like my saved ones."
 
 ## 14. Open questions
 

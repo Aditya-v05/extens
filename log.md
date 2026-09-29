@@ -4,6 +4,31 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — My Accounts
+
+A full-page list of saved and recently viewed companies. Ranked, filterable, with status and notes.
+
+- **Page** (`src/entrypoints/accounts/`): opened from the side-panel footer and Settings (Settings section 4 replaces the old saved table).
+  - **Tabs:** Saved / Recently viewed. Recently viewed = cached lookups from the last 7 days, with ☆ Save.
+  - **Priority** = 60% fit + 40% timing (`src/lib/accounts.ts`). Sort by priority, fit, timing or recently saved.
+  - **Row:** fit, why-now label + top signal, best contact, status dropdown (New / Contacted / Replied / Not a fit), last updated (stale after 14 days), *Refresh · 2 cr*, *Remove*.
+  - **Expanded row:** fit checklist, every signal with sources, top 6 contacts with *Reveal · 1 cr*, a note.
+  - **Filters:** search (across company, note, persona, all contact titles, signal labels and details), status, "Hot only".
+  - Stacks into cards in narrow windows.
+- **Data:**
+  - Status and notes live in `accountMeta`, separate from the snapshot, so they survive refreshes and unsave/re-save.
+  - A successful lookup of a saved company now updates its saved copy, keeping the original `savedAt`.
+  - The list prefers the newer of the saved snapshot and the cache.
+- **Headless refresh:** `runLookup` accepts `windowId: null` and returns the final state. The background handles `refreshAccount` and the page asks before going over budget. `revealContact` also works without a panel.
+- **CSV:** moved to My Accounts; adds `status` and `note` columns.
+- **UI smoke test** (`e2e/smoke.mjs`, `npm run smoke`): loads the *built* extension into Playwright's Chromium, seeds sample data (no API calls), checks ranking, status saving, search, the tabs, the side panel and page errors, and screenshots every page.
+  - This was the first time the UI ran in a real browser. It found: search missing contact titles and signal details (fixed); link buttons centred instead of left-aligned (fixed); awkward contact-line wrapping (fixed); a cramped search box in narrow windows (fixed).
+- **Real-extension check:** clicked *Refresh* on a saved account in real Chromium with the real keys. It took 1.8s, recorded exactly 2 credits (company 1, jobs 1), kept status, note and `savedAt`, and threw no errors. This is the first confirmation that Apollo and Jev work from inside the actual extension, not just from Node.
+
+**Verified:** 74 unit tests (new: priority, stale flag, row building, sort/filter; storage tests for savedAt, metadata surviving unsave, and no lost concurrent credit spends); tsc and build clean; smoke test 6/6.
+
+---
+
 ## 2026-09-29 — Website signals (v2)
 
 Why now now also reads the company's own website. Rule: every signal quotes the page and links to it.

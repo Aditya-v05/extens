@@ -9,6 +9,8 @@ An open-source Chrome extension for anyone doing outbound. Open a company's webs
 3. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
 4. **Their email**, revealed on click.
 
+**My Accounts** (from the panel footer or Settings) is a full-page list of saved and recently viewed companies. It's ranked by priority (60% fit + 40% timing), with a status (New / Contacted / Replied / Not a fit), notes, search, a "Hot only" filter, per-account refresh, and CSV export.
+
 Company and people data come from **Apollo**. Judgments come from **Jev**, [TypeSafe](https://typesafe.ai)'s System One model. You bring both API keys.
 
 ## Privacy
@@ -81,6 +83,7 @@ APOLLO_KEY=... TYPESAFE_KEY=... npm test   # also runs the live end-to-end test 
 TYPESAFE_KEY=... node eval/roles-eval.mjs  # compares role-question wordings on labelled roles
 TYPESAFE_KEY=... node eval/site-signals-eval.mjs  # checks website-snippet labelling
 SITES=https://linear.app/ npx vitest run src/lib/site-scan.live.test.ts --silent=false  # website reader on real sites
+npm run build && npm run smoke             # loads the built extension in Chromium, checks My Accounts, screenshots every page (no API calls)
 ```
 
 Code map:
@@ -88,7 +91,9 @@ Code map:
 ```
 src/entrypoints/background.ts   icon click, messages, key tests
 src/entrypoints/sidepanel/      the panel UI
-src/entrypoints/options/        setup, rules editor, saved accounts + CSV
+src/entrypoints/options/        setup, rules editor, credits
+src/entrypoints/accounts/       My Accounts page
+src/lib/accounts.ts             priority, ranking, filters for My Accounts
 src/lib/pipeline.ts             lookup orchestration and reveals
 src/lib/apollo.ts, jev.ts       API clients
 src/lib/questions.ts            every Jev question, in one place
@@ -104,7 +109,7 @@ src/lib/mapping.ts              Jev answers → fit, persona, ranking, why now
 ## Roadmap
 
 - Phone numbers through an optional self-hosted relay
-- "My Accounts" view, and "find more companies like my saved ones"
+- "Find more companies like my saved ones"
 
 ## License
 

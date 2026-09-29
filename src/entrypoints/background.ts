@@ -33,6 +33,10 @@ export default defineBackground(() => {
           .then(([tab]) => runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget, tabId: tab?.id }));
         sendResponse({ ok: true });
         return false;
+      case 'refreshAccount':
+        // From My Accounts: no side panel and no tab, so it runs headless (no website signals).
+        runLookup(null, msg.domain, { force: true, allowOverBudget: msg.allowOverBudget }).then(sendResponse);
+        return true;
       case 'refreshBalance':
         refreshBalance(true).then(() => sendResponse({ ok: true }));
         return true;

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { CreditBar } from '@/components/CreditBar';
+import { ago, pct } from '@/components/format';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
-import { send } from '@/lib/messages';
+import { openAccounts, send } from '@/lib/messages';
 import { normalizeDomainInput } from '@/lib/resolver';
 import * as store from '@/lib/storage';
 import type { Check, Contact, LookupError, LookupResult, Signal, ViewState, WhyNow } from '@/lib/types';
@@ -40,7 +41,7 @@ export default function App() {
       {view.status !== 'needs_setup' && <CreditBar credits={credits} onSettings={openSettings} />}
       <Body view={view} windowId={windowId} lookup={lookup} cost={cost} />
       <footer className="row spread small muted">
-        <span>Click the toolbar icon on any company site.</span>
+        <button className="link small" onClick={() => openAccounts()}>My Accounts</button>
         <button className="link small" onClick={() => browser.runtime.openOptionsPage()}>Settings</button>
       </footer>
     </main>
@@ -480,14 +481,4 @@ function SectionSkeleton({ label }: { label: string }) {
       <div className="skeleton" style={{ height: 60 }} />
     </div>
   );
-}
-
-const pct = (p: number) => `${Math.round(p * 100)}%`;
-
-function ago(t: number): string {
-  const m = Math.round((Date.now() - t) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;
 }

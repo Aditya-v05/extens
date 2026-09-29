@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { DEFAULT_SETTINGS, addSpend, current, type Balance, type Ledger, type Settings, type SpendKind } from './credits';
+import { EMPTY_META, type AccountMeta } from './accounts';
 import type { Contact, Keys, LookupResult, Profile, ViewState } from './types';
 
 export const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -13,6 +14,7 @@ type LocalSchema = {
   settings: Settings;
   credits: Ledger;
   balance: Balance;
+  accountMeta: Record<string, AccountMeta>;
 };
 
 async function getLocal<K extends keyof LocalSchema>(key: K): Promise<LocalSchema[K] | undefined> {
@@ -69,12 +71,28 @@ export async function putCached(result: LookupResult): Promise<void> {
 
 export const clearCache = () => setLocal('cache', {});
 
+/** All unexpired cached lookups ("recently viewed"). */
+export async function getAllCached(): Promise<Record<string, LookupResult>> {
+  const cache = (await getLocal('cache')) ?? {};
+  const now = Date.now();
+  return Object.fromEntries(Object.entries(cache).filter(([, r]) => now - r.fetchedAt < CACHE_TTL_MS));
+}
+
 export const getSaved = async () => (await getLocal('saved')) ?? {};
 
+/** Save (or update) an account's snapshot. Re-saving keeps the original savedAt. */
 export async function saveAccount(result: LookupResult): Promise<void> {
   const saved = await getSaved();
-  saved[result.domain] = { ...result, savedAt: Date.now() };
+  saved[result.domain] = { ...result, savedAt: saved[result.domain]?.savedAt ?? Date.now() };
   await setLocal('saved', saved);
+}
+
+export const getAccountMeta = async () => (await getLocal('accountMeta')) ?? {};
+
+export async function updateAccountMeta(domain: string, patch: Partial<Omit<AccountMeta, 'updatedAt'>>): Promise<void> {
+  const all = await getAccountMeta();
+  all[domain] = { ...EMPTY_META, ...all[domain], ...patch, updatedAt: Date.now() };
+  await setLocal('accountMeta', all);
 }
 
 export async function unsaveAccount(domain: string): Promise<void> {

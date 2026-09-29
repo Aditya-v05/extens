@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost, totalSpent } from '@/lib/credits';
-import { toCsv } from '@/lib/csv';
-import { send, type KeyTest } from '@/lib/messages';
+import { openAccounts, send, type KeyTest } from '@/lib/messages';
 import { generateRules } from '@/lib/rules';
 import * as store from '@/lib/storage';
-import type { Keys, LookupResult, ProfileAnswers, Rules } from '@/lib/types';
+import type { Keys, ProfileAnswers, Rules } from '@/lib/types';
 import './options.css';
 
 export default function Options() {
@@ -20,7 +19,7 @@ export default function Options() {
       <KeysSection />
       <ProfileSection />
       <CreditsSection />
-      <SavedSection />
+      <AccountsSection />
     </main>
   );
 }
@@ -341,69 +340,18 @@ function CreditsSection() {
   );
 }
 
-// ---------- saved accounts ----------
+// ---------- accounts ----------
 
-type Saved = LookupResult & { savedAt: number };
-
-function SavedSection() {
-  const [saved, setSaved] = useState<Saved[]>([]);
-  const load = () => store.getSaved().then((s) => setSaved(Object.values(s).sort((a, b) => b.savedAt - a.savedAt)));
-  useEffect(() => {
-    load();
-  }, []);
-
-  const exportCsv = () => {
-    const blob = new Blob([toCsv(saved)], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `icp-scout-accounts-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
+function AccountsSection() {
   return (
     <section className="card stack">
-      <div className="row spread">
-        <h2>4 · Saved accounts</h2>
-        <div className="row">
-          <button className="ghost" onClick={load}>Reload</button>
-          <button disabled={!saved.length} onClick={exportCsv}>Export CSV</button>
-        </div>
+      <h2>4 · My Accounts</h2>
+      <p className="small muted" style={{ margin: 0 }}>
+        Saved and recently viewed companies, ranked by fit and timing, with status, notes and CSV export.
+      </p>
+      <div>
+        <button onClick={() => openAccounts()}>Open My Accounts</button>
       </div>
-      {saved.length === 0 ? (
-        <p className="muted small">No saved accounts yet. Hit ☆ Save in the side panel.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr><th>Company</th><th>Fit</th><th>Why now</th><th>Best contact</th><th>Saved</th><th /></tr>
-          </thead>
-          <tbody>
-            {saved.map((a) => {
-              const best = a.contacts?.[0];
-              return (
-                <tr key={a.domain}>
-                  <td><strong>{a.company.name}</strong><div className="small muted">{a.domain}</div></td>
-                  <td>{a.fit ? `${a.fit.score}%` : '—'}</td>
-                  <td>
-                    {a.whyNow?.timing ?? '—'}
-                    <div className="small muted">{a.whyNow?.signals.find((s) => s.relevance >= 0.5)?.label ?? ''}</div>
-                  </td>
-                  <td>
-                    {best ? (
-                      <>
-                        {best.firstName} {best.lastName ?? ''}
-                        <div className="small muted">{best.email ?? best.title ?? ''}</div>
-                      </>
-                    ) : '—'}
-                  </td>
-                  <td className="small muted">{new Date(a.savedAt).toLocaleDateString()}</td>
-                  <td><button className="ghost" onClick={async () => { await store.unsaveAccount(a.domain); load(); }}>Remove</button></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
     </section>
   );
 }
