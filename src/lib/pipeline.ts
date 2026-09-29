@@ -6,12 +6,13 @@ import {
   type Candidate, type DiscoverResult,
 } from './discover';
 import { applyReveals, type RevealPatch } from './contacts';
+import { SENIOR, functionKeywords, mergePeople } from './people';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
 import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
 import type { Answer } from './jev';
 import {
-  ROLE_BATCH, accountQuestions, companyState, jobId, peopleState, rankQuestions, roleQuestions, sellerState,
+  ROLE_BATCH, accountQuestions, companyState, jobId, peopleState, rankId, rankQuestions, roleQuestions, sellerState,
   siteQuestions, siteRelId, siteTypeId, snippetState, whyNowQuestions, whyNowState,
 } from './questions';
 import { registrableDomain } from './resolver';
@@ -19,12 +20,10 @@ import { scanSite, type SiteScan, type Snippet } from './site-scan';
 import { evaluateRules } from './rules';
 import { jobCandidates, signalCandidates, type JobCandidate, type SignalCandidate } from './signals';
 import * as store from './storage';
-import type { Keys, LookupError, LookupResult, Profile, ViewState, WhyNow } from './types';
+import type { Contact, Keys, LookupError, LookupResult, Profile, ViewState, WhyNow } from './types';
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** Used when no one matches the persona titles. */
-const FALLBACK_SENIORITIES = ['owner', 'founder', 'c_suite', 'partner', 'vp', 'head', 'director'];
 
 // ---------- orchestration ----------
 
@@ -136,8 +135,7 @@ async function lookup(
   const siteStatus: NonNullable<WhyNow['siteStatus']> = !settings.scanSite ? 'off' : scan ? 'ok' : 'unavailable';
   const [contacts, whyNow] = await Promise.all([
     found.contacts.length
-      ? jev
-          .ask(keys.typesafe, { ...state, best_persona: persona?.chosen ?? null, people: peopleState(found.contacts) }, rankQuestions(found.contacts))
+      ? rankPeople(keys.typesafe, { ...state, best_persona: persona?.chosen ?? null }, found.contacts)
           .then((rankAnswers) => store.withReveals(applyRanks(found.contacts, rankAnswers)))
       : Promise.resolve(found.contacts),
     signals.length || jobs.length || snippets.length
@@ -224,13 +222,41 @@ async function getJobsOrNull(key: string, organizationId: string) {
   }
 }
 
-async function findPeople(key: string, organizationId: string, personas: string[]) {
+/**
+ * People search is free, so cast a wider net in parallel and put senior people first:
+ *  1. the persona titles among senior people;
+ *  2. senior people in each persona's function ("customer experience", "support"), which catches
+ *     titles the personas don't spell out, e.g. "Head of Customer Operations";
+ *  3. the persona titles at any level, to fill in.
+ * Title matching alone returned 15 customer-experience reps at Ramp and missed its Head of Customer
+ * Operations (2026-09-29).
+ */
+export async function findPeople(key: string, organizationId: string, personas: string[]) {
   if (personas.length) {
-    const contacts = await apollo.searchPeople(key, { organizationId, titles: personas });
+    const lists = await Promise.all([
+      apollo.searchPeople(key, { organizationId, titles: personas, seniorities: SENIOR }),
+      ...functionKeywords(personas).map((keywords) => apollo.searchPeople(key, { organizationId, keywords, seniorities: SENIOR })),
+      apollo.searchPeople(key, { organizationId, titles: personas }),
+    ]);
+    const contacts = mergePeople(lists);
     if (contacts.length) return { contacts, fallback: false };
   }
-  const contacts = await apollo.searchPeople(key, { organizationId, seniorities: FALLBACK_SENIORITIES });
+  const contacts = await apollo.searchPeople(key, { organizationId, seniorities: SENIOR });
   return { contacts, fallback: true };
+}
+
+/** Rank people in batches of ROLE_BATCH (long lists blur Jev's answers); keys are rank_<index into contacts>. */
+export async function rankPeople(key: string, state: object, contacts: Contact[]): Promise<Record<string, Answer>> {
+  const batches = chunk(contacts, ROLE_BATCH);
+  const results = await Promise.all(batches.map((b) => jev.ask(key, { ...state, people: peopleState(b) }, rankQuestions(b))));
+  const answers: Record<string, Answer> = {};
+  results.forEach((a, bi) => {
+    for (let i = 0; i < batches[bi]!.length; i++) {
+      const ans = a[rankId(i)];
+      if (ans) answers[rankId(bi * ROLE_BATCH + i)] = ans;
+    }
+  });
+  return answers;
 }
 
 // ---------- reveal ----------

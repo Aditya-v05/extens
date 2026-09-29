@@ -89,11 +89,15 @@ export interface PeopleQuery {
   organizationId: string;
   titles?: string[];
   seniorities?: string[];
+  /** Free-text match across the person's fields (title, department…). */
+  keywords?: string;
   perPage?: number;
 }
 
 /** People API search: free, but returns obfuscated last names and no emails. */
 export async function searchPeople(key: string, q: PeopleQuery): Promise<Contact[]> {
+  // Without a company filter Apollo searches everyone in its database (333k people in one test).
+  if (!q.organizationId) throw new Error('People search needs a company id');
   const payload: Record<string, unknown> = {
     organization_ids: [q.organizationId],
     per_page: q.perPage ?? 15,
@@ -101,6 +105,7 @@ export async function searchPeople(key: string, q: PeopleQuery): Promise<Contact
   };
   if (q.titles?.length) payload.person_titles = q.titles;
   if (q.seniorities?.length) payload.person_seniorities = q.seniorities;
+  if (q.keywords) payload.q_keywords = q.keywords;
   const body = (await request('apollo', `${BASE}/mixed_people/api_search`, {
     method: 'POST',
     headers: headers(key),

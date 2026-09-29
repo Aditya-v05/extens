@@ -4,6 +4,28 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Finding the real owner (Ramp)
+
+> "is there no better cx head in ramp ?"
+
+There was. Sift never saw her.
+
+- **Cause:** people search matched the persona titles with no seniority filter and took the first 15. At Ramp that returned 15 of 23 customer-experience reps, and Jev could only rank who it was given, so "Waylon L., Customer Experience" came out on top. Ramp's **Head of Customer Operations** (Elena G.) never appeared, because her title doesn't contain the persona phrases.
+- **Probing Ramp with the free search:**
+  - the persona titles among senior people: 0 results;
+  - the phrase "customer experience" among senior people: 0 results;
+  - the word "customer" among senior people: Elena plus a Director and three Heads of Customer Success.
+- **Fix** (`findPeople`, `src/lib/people.ts`): three free searches in parallel, merged senior-first, up to 25.
+  1. The persona titles among senior people.
+  2. Senior people matching each single function word from the personas ("customer", "experience", "support").
+  3. The persona titles at any level, to fill in.
+- **Ranking** now runs in batches of 10 (`rankPeople`), the same lesson as the role judgments: long lists blur Jev's answers.
+- **Result at Ramp (live, 1 credit for the company lookup):** 20 people found in 0.9s and ranked in 0.4s. Elena, Head of Customer Operations, is first at 62, ahead of the CX reps (44–49).
+- **Guard:** while testing, a search with an empty company id came back with 333,230 people from other companies (IKEA, banks…). Apollo silently drops the filter. `searchPeople` now refuses to run without a company id; there's a test for it. Real lookups always have an id; this was a test-harness mistake, but the failure would have been silent.
+- **Tests:** `people.test.ts` (function words, merge order and cap) and `people-guard.test.ts`. 99 pass.
+
+---
+
 ## 2026-09-29 — Discover: companies like your best saved accounts
 
 - **Apollo findings:**

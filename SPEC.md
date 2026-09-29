@@ -230,7 +230,13 @@ Signals with relevance ≥ 0.5 are shown; the rest sit behind "Show less relevan
 
 ### Decision 3 — Person: "Who most likely owns the problem?"
 - `persona` — **Choice** over the user's personas plus `none_fit`. Asked in Jev call #1.
-- `rank_<id>` — **Score** per candidate person (title, seniority, department): "How likely is this person to own the problem the seller solves?" Batched into one request. Sort by score and tie-break on seniority.
+- `rank_<id>` — **Score** per candidate person (title): "How likely is this person to own the problem the seller solves?" Ranked in **batches of 10**, run in parallel (`rankPeople`). Reachable people (has an email) sort first, then by score.
+- **Finding people** (`findPeople`, all free), three searches in parallel, merged senior-first with duplicates removed, up to 25:
+  1. the persona titles among senior people (owner, founder, C-level, partner, VP, head, director);
+  2. senior people matching each **single function word** from the personas ("customer", "experience", "support");
+  3. the persona titles at any level, to fill in.
+  - **Why:** at Ramp (2026-09-29) title matching alone returned 15 customer-experience reps and missed the Head of Customer Operations. The keyword "customer" among senior people found her and four Customer Success heads; she now ranks first (62, reps 44–49).
+  - A search without a company id is refused: Apollo would ignore the filter and search everyone (333k people in one test).
 
 ### Onboarding conversion
 - Pure code in v1 (see §4.1). The user edits the result. Mapping free text onto Apollo's industry list with Jev is a possible later improvement.
