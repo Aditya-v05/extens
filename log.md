@@ -16,7 +16,7 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 - **Version 0.2.0**, `engines.node >= 22`, `npm run zip` for the upload package.
 - README: CI badge, shortcut, privacy link, install section, the new scripts.
 
-**Verified:** 105 unit tests, tsc, build, smoke 26/26, zip built, store images reviewed.
+**Verified:** 105 unit tests, tsc, build, smoke 26/26, zip built, store images reviewed. The first CI run on GitHub passed every step in 1m27s. The actions were then bumped from v4 to v7, since v4 targets the deprecated Node 20.
 
 ---
 
