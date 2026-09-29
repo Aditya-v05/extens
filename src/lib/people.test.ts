@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SENIOR, excludeByTitle, functionKeywords, mergePeople, peopleFilters } from './people';
+import { SENIOR, excludeByTitle, functionKeywords, interleave, mergePeople, peopleFilters } from './people';
 import type { Contact } from './types';
 
 describe('functionKeywords', () => {
@@ -37,5 +37,13 @@ describe('excludeByTitle', () => {
     const people = [p('Customer Experience Associate'), p('Head of CX'), p('Associate Director, Support'), p('Internal Tools Lead'), p('Support Intern')];
     expect(excludeByTitle(people, ['associate', 'INTERN']).map((x) => x.title)).toEqual(['Head of CX', 'Internal Tools Lead']);
     expect(excludeByTitle(people, [])).toHaveLength(5);
+  });
+});
+
+describe('interleave', () => {
+  const p = (id: string) => ({ apolloId: id, firstName: id, lastName: null, lastNameObfuscated: null, title: id, hasEmail: true, rank: null });
+  it('takes one from each list in turn', () => {
+    expect(interleave([[p('a1'), p('a2'), p('a3')], [p('b1')], [p('c1'), p('c2')]]).map((x) => x.apolloId)).toEqual(['a1', 'b1', 'c1', 'a2', 'c2', 'a3']);
+    expect(interleave([])).toEqual([]);
   });
 });

@@ -4,6 +4,25 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Finding the owner at small companies (Linear)
+
+User screenshot: Sift on Linear listed "Jon P., Customer Experience" as best contact (3 found), while LinkedIn showed Skyline Lau, *Customer Experience Leader*, and Alexandra, *Product Operations Lead (Customer Experience & ProdOps)*.
+
+- **Probe (free people search):** Apollo has both.
+  - Skyline is found by the keyword "customer experience" at any level.
+  - Alexandra's Apollo title is just "Product Operations Lead", so only "operations" finds her.
+  - The Ramp fix only searched keywords among *senior* people. Linear (180 people) has no VP or Head for CX; its owners are Leads and Managers.
+- **Search:** a fourth tier, each keyword at any level. Senior results still come first; the any-level searches **take turns** (`interleave`), so the first keyword's 15 reps can't fill the list before "operations" gets a say. Cap 25 → 30.
+- **Ranking:** new `eval/rank-eval.mjs` (14 ordered pairs of real titles). The plain wording scored 10/14: it put "Customer Experience" (a rep) above "Customer Experience Manager" and above the COO. The level-aware wording (leads and managers outrank members; a bare function title usually means an individual contributor) scored 13/14; the only miss is a near-tie at the bottom. Shipped.
+- **Live, default settings:**
+  - Linear: 3 → 22 found; up front Cristina Cordova (COO, 70) + Skyline Lau (Customer Experience Leader, 66).
+  - With the keyword "operations": Skyline first (78), Alexandra #3.
+  - Ramp: Elena, Head of Customer Operations, first (77), then CX managers and Customer Success heads.
+- **Tests:** `findPeople` searches in order (senior, then any level), turn-taking merge, exclusions; `interleave`. 106 pass.
+- **Note:** cached results keep their old contacts until *Refresh* (or until a profile save clears the cache).
+
+---
+
 ## 2026-09-29 — Demo directed with no-slop-motion's rules
 
 > "https://github.com/ferndesk/no-slop-motion - can u use for the demo"

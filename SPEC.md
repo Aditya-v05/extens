@@ -230,13 +230,17 @@ Signals with relevance ≥ 0.5 are shown; the rest sit behind "Show less relevan
 
 ### Decision 3 — Person: "Who most likely owns the problem?"
 - `persona` — **Choice** over the user's personas plus `none_fit`. Asked in Jev call #1.
-- `rank_<id>` — **Score** per candidate person (title): "How likely is this person to own the problem the seller solves?" Ranked in **batches of 10**, run in parallel (`rankPeople`). Reachable people (has an email) sort first, then by score.
+- `rank_<id>` — **Score** per candidate person (title): "How likely is this person to own the problem the seller solves and decide on buying for it?"
+  - **Level-aware:** someone who leads or manages the team outranks people who work in it, and a title naming only a function ("Customer Experience") usually means an individual contributor. `eval/rank-eval.mjs` (14 ordered pairs of real Linear and Ramp titles) scored 13/14, against 10/14 for the plain wording, which put "Customer Experience" above "Customer Experience Manager" and above the COO.
+  - Ranked in **batches of 10**, run in parallel (`rankPeople`). Reachable people (has an email) sort first, then by score.
 - **Finding people** (`findPeople`, all free). Driven by the user's **Who to look for** settings (`peopleFilters`; defaults from the personas):
   - *Titles* (the personas), *Seniority* (Apollo levels; default owner, founder, C-level, partner, VP, head, director), *Keywords* (single words; default the function words of the personas; up to 5 searched), and *Leave out titles containing*.
-  - Searches run in parallel and are merged senior-first with duplicates removed, up to 25:
+  - Searches run in parallel and are merged with duplicates removed, up to 30:
     1. titles at the chosen seniorities;
     2. one search per keyword at the chosen seniorities;
-    3. titles at any level, to fill in.
+    3. titles at any level;
+    4. one search per keyword at any level. Small companies often have no VP or Head for the function, and the owner is a Lead or Manager (at Linear, 180 people: "Customer Experience Leader").
+  - Merge order: all senior results first, then the any-level searches **taking turns** (one from each in turn), so one search of 15 reps can't crowd out another keyword's results.
   - Exclusions are applied by Sift after merging, because Apollo's API ignores its own `person_not_titles`.
   - **Filters Apollo's API does honour:** titles, seniorities, keywords. Tried at Ramp without success: `include_similar_titles` (0 results); department filters (0 results with the parameter name tried; it isn't documented, so it's unconfirmed); `person_not_titles` (ignored). So those aren't exposed.
   - **Why:** at Ramp (2026-09-29) title matching alone returned 15 customer-experience reps and missed the Head of Customer Operations. The keyword "customer" among senior people found her and four Customer Success heads; she now ranks first (62, reps 44–49).

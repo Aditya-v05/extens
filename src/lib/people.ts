@@ -33,8 +33,8 @@ export function excludeByTitle(people: Contact[], excluded: string[]): Contact[]
   const res = words.map((w) => new RegExp(`(^|[^a-z])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`, 'i'));
   return people.filter((p) => !res.some((re) => re.test(p.title ?? '')));
 }
-/** Enough to find the real owner without flooding Jev (ranked in batches of 10). */
-export const MAX_PEOPLE = 25;
+/** Enough to find the real owner without flooding Jev (ranked in batches of 10, in parallel). */
+export const MAX_PEOPLE = 30;
 
 const RANK_WORDS = new Set([
   'vp', 'vice', 'president', 'svp', 'evp', 'avp', 'head', 'of', 'director', 'chief', 'officer', 'senior', 'sr',
@@ -56,6 +56,13 @@ export function functionKeywords(personas: string[]): string[] {
     }
   }
   return out.slice(0, 5);
+}
+
+/** Take one from each list in turn, so no single search crowds out the others. */
+export function interleave(lists: Contact[][]): Contact[] {
+  const out: Contact[] = [];
+  for (let i = 0; lists.some((l) => i < l.length); i++) for (const l of lists) if (i < l.length) out.push(l[i]!);
+  return out;
 }
 
 /** Merge search results in priority order, without duplicates, up to a cap. */

@@ -6,8 +6,10 @@ const byQuery: Record<string, string[]> = {};
 vi.mock('./apollo', () => ({
   searchPeople: vi.fn(async (_k: string, q: any) => {
     calls.push(q);
-    const key = q.keywords ? `kw:${q.keywords}` : q.titles ? `titles${q.seniorities ? '+sen' : ''}` : 'fallback';
-    return (byQuery[key] ?? []).map((t, i) => ({ apolloId: `${key}-${i}-${t}`, firstName: t, lastName: null, lastNameObfuscated: null, title: t, hasEmail: true, rank: null }));
+    // e.g. "titles+sen", "kw:customer+sen", "titles", "kw:customer"; seniority alone is the fallback search.
+    const what = q.keywords ? `kw:${q.keywords}` : q.titles ? 'titles' : null;
+    const key = what ? `${what}${q.seniorities ? '+sen' : ''}` : 'fallback';
+    return (byQuery[key] ?? []).map((t) => ({ apolloId: t /* same person, same id, in every search */, firstName: t, lastName: null, lastNameObfuscated: null, title: t, hasEmail: true, rank: null }));
   }),
 }));
 
@@ -19,22 +21,26 @@ beforeEach(() => {
 const filters = { titles: ['VP Customer Experience'], seniorities: ['vp', 'head'], keywords: ['customer', 'operations'], excludeTitles: ['associate'] };
 
 describe('findPeople', () => {
-  it('runs titles+seniority, one search per keyword, then titles at any level; senior results first; exclusions dropped', async () => {
+  it('runs senior searches first, then titles and keywords at any level taking turns; exclusions dropped', async () => {
     byQuery['titles+sen'] = ['VP, Customer Experience'];
-    byQuery['kw:customer'] = ['Head of Customer Operations'];
-    byQuery['kw:operations'] = [];
+    byQuery['kw:customer+sen'] = ['Head of Customer Operations'];
     byQuery['titles'] = ['Customer Experience Associate', 'Customer Experience Manager'];
+    // Small companies: the owner is a "Lead", found only by keyword at any level (Linear, 2026-09-29).
+    byQuery['kw:customer'] = ['Customer Experience Leader', 'Customer Experience Manager'];
+    byQuery['kw:operations'] = ['Product Operations Lead'];
     const { findPeople } = await import('./pipeline');
     const out = await findPeople('k', 'org1', filters);
 
-    expect(calls.map((q) => [q.titles ?? null, q.keywords ?? null, q.seniorities ?? null])).toEqual([
-      [['VP Customer Experience'], null, ['vp', 'head']],
-      [null, 'customer', ['vp', 'head']],
-      [null, 'operations', ['vp', 'head']],
-      [['VP Customer Experience'], null, null],
+    expect(calls.map((q) => [q.titles ? 'titles' : q.keywords, !!q.seniorities])).toEqual([
+      ['titles', true], ['customer', true], ['operations', true],
+      ['titles', false], ['customer', false], ['operations', false],
     ]);
     expect(out.fallback).toBe(false);
-    expect(out.contacts.map((c) => c.title)).toEqual(['VP, Customer Experience', 'Head of Customer Operations', 'Customer Experience Manager']);
+    // Senior first; then one from each any-level search in turn (the Associate is excluded).
+    expect(out.contacts.map((c) => c.title)).toEqual([
+      'VP, Customer Experience', 'Head of Customer Operations',
+      'Customer Experience Leader', 'Product Operations Lead', 'Customer Experience Manager',
+    ]);
   });
 
   it('with no seniority chosen, searches any level once per query', async () => {

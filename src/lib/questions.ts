@@ -88,7 +88,9 @@ export function rankQuestions(contacts: Contact[]): Record<string, Question> {
   contacts.forEach((_, i) => {
     q[rankId(i)] = {
       type: 'score',
-      instructions: `How likely is the person \`people[${i}]\` at \`company\` to own the problem the seller solves (\`seller.sells\`)? The seller's usual buyers are \`seller.typical_buyers\`; \`best_persona\` is the role judged most likely to own it here.`,
+      // Level-aware wording chosen by eval/rank-eval.mjs (13/14 vs 10/14): without it, a bare "Customer Experience"
+      // outranked "Customer Experience Manager" and even the COO.
+      instructions: `How likely is the person \`people[${i}]\` at \`company\` to own the problem the seller solves (\`seller.sells\`) and decide on buying for it? The seller's usual buyers are \`seller.typical_buyers\`. Someone who leads or manages the relevant team (a head, director, lead, leader or manager) outranks people who work in it; a title that names only a function with no level, like "Customer Experience", usually means an individual contributor.`,
       criteria: RANK_LEVELS,
     };
   });

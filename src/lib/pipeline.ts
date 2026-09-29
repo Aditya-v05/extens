@@ -6,7 +6,7 @@ import {
   type Candidate, type DiscoverResult,
 } from './discover';
 import { applyReveals, type RevealPatch } from './contacts';
-import { MAX_PEOPLE, SENIOR, excludeByTitle, mergePeople, peopleFilters, type PeopleFilters } from './people';
+import { MAX_PEOPLE, SENIOR, excludeByTitle, interleave, mergePeople, peopleFilters, type PeopleFilters } from './people';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
 import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
@@ -228,19 +228,29 @@ async function getJobsOrNull(key: string, organizationId: string) {
  *  1. their titles among the chosen seniorities;
  *  2. each keyword among the chosen seniorities (catches titles they didn't spell out, e.g.
  *     "Head of Customer Operations" for "customer");
- *  3. their titles at any level, to fill in.
+ *  3. their titles at any level;
+ *  4. each keyword at any level: small companies often have no VP or Head for the function, and the
+ *     real owner is a "Lead" or "Manager" (at Linear, 180 people: "Customer Experience Leader").
+ * Merged in that order, so senior people still come first; Jev ranks everyone by title.
  * Then excluded titles are dropped here (Apollo's API ignores its own exclusion filter).
  */
 export async function findPeople(key: string, organizationId: string, f: PeopleFilters) {
   const seniorities = f.seniorities.length ? f.seniorities : undefined;
-  const searches: Promise<Contact[]>[] = [];
-  if (f.titles.length) searches.push(apollo.searchPeople(key, { organizationId, titles: f.titles, seniorities }));
-  for (const keywords of f.keywords.slice(0, MAX_KEYWORD_SEARCHES)) {
-    searches.push(apollo.searchPeople(key, { organizationId, keywords, seniorities }));
+  const keywords = f.keywords.slice(0, MAX_KEYWORD_SEARCHES);
+  const senior: Promise<Contact[]>[] = [];
+  const anyLevel: Promise<Contact[]>[] = [];
+  if (f.titles.length) senior.push(apollo.searchPeople(key, { organizationId, titles: f.titles, seniorities }));
+  for (const k of keywords) senior.push(apollo.searchPeople(key, { organizationId, keywords: k, seniorities }));
+  if (seniorities) {
+    if (f.titles.length) anyLevel.push(apollo.searchPeople(key, { organizationId, titles: f.titles }));
+    for (const k of keywords) anyLevel.push(apollo.searchPeople(key, { organizationId, keywords: k }));
   }
-  if (f.titles.length && seniorities) searches.push(apollo.searchPeople(key, { organizationId, titles: f.titles }));
-  if (searches.length) {
-    const contacts = excludeByTitle(mergePeople(await Promise.all(searches), Infinity), f.excludeTitles).slice(0, MAX_PEOPLE);
+  if (senior.length) {
+    const [seniorLists, anyLists] = await Promise.all([Promise.all(senior), Promise.all(anyLevel)]);
+    // Senior people first; the any-level searches take turns so each keyword gets a say (at Linear, one
+    // "customer" search of 15 reps used to fill the list before "operations" found the Product Operations Lead).
+    const merged = mergePeople([...seniorLists, interleave(anyLists)], Infinity);
+    const contacts = excludeByTitle(merged, f.excludeTitles).slice(0, MAX_PEOPLE);
     if (contacts.length) return { contacts, fallback: false };
   }
   const contacts = excludeByTitle(await apollo.searchPeople(key, { organizationId, seniorities: seniorities ?? SENIOR }), f.excludeTitles);
