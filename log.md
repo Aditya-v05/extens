@@ -4,6 +4,30 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing v7: SIFT in slats, new headline (branch `site-redesign`)
+
+> "let us remove the sifting part - lets add the large sift text down there - lets change the text to sift through the companies (work on it a bit)" and, with the MicroSlats source pasted: "i want small cards like this but no animation needed we can maybe darken the cards to spell out sift below and they flicker randomly"
+
+- **Copy:**
+  - headline "Sift through companies. / *Talk to the right ones.*";
+  - lede "Open any company's site and Sift tells you if it fits, why now, and who to reach. One click, on your own Apollo and Jev keys.";
+  - one Install Sift button, with "Free and open source" under it;
+  - page title and share description updated to match.
+- **SIFT in slats** (`site/SlatWord.tsx`, replaces the evidence canvas):
+  - a full-width wall of small rounded cards fills the bottom of the first screen;
+  - the cards inside the letters of SIFT are darkened, so the word reads like holes punched in a sieve;
+  - random cards flicker, and about 1 in 8 flickers mint;
+  - no waves and no cursor effects;
+  - it is our own 2D-canvas take on the idea, no ogl and no copied code, redrawn about 16 times a second only while visible, and still under reduced motion;
+  - phones use smaller cards so the letters stay readable.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - every reveal fires on scroll; no overflow or page errors;
+  - `og.png` regenerated;
+  - compile, 123 tests, `wxt build` and smoke pass.
+
+---
+
 ## 2026-09-30 — Landing v6: centred hero with a living evidence canvas (branch `site-redesign`)
 
 > "no lets not use the right left design its too ai like can we think of something different". Then a pasted direction: one centred idea with very little copy, then show Sift doing it ("noise comes in, one answer comes out"). Mint should mean signal only. Kill the galaxy, the ghost wordmark and the second CTA.

@@ -4,7 +4,7 @@ import { FitCard, ProfileCard, WhyNowCard } from '@/entrypoints/sidepanel/App';
 import type { LookupResult } from '@/lib/types';
 import icon48 from '../public/icon/48.png';
 import { Demo } from './Demo';
-import { Evidence } from './Evidence';
+import { SlatWord } from './SlatWord';
 import { acme, acmeRevealed } from './demo-data';
 
 const REPO = 'https://github.com/Aditya-v05/extens';
@@ -100,22 +100,25 @@ function Nav() {
   );
 }
 
-// ---------- hero: one centred idea, then Sift visibly doing it ----------
+// ---------- hero: the line, one button, and SIFT spelled in slats across the bottom ----------
 
 function Hero() {
   return (
     <section className="l-hero">
       <div className="l-hero-copy">
         <h1>
-          Know who's worth<br /><em>talking to.</em>
+          Sift through companies.<br /><em>Talk to the right ones.</em>
         </h1>
-        <p className="l-lede">Qualify any company. Find the signal. Reach the right person.</p>
+        <p className="l-lede">
+          Open any company's site and Sift tells you if it fits, why now, and who to reach. One click, on your own Apollo
+          and Jev keys.
+        </p>
         <div className="l-ctas">
           <a className="l-btn cream" href={INSTALL}>Install Sift</a>
         </div>
-        <p className="l-fine">Bring your own Apollo + Jev keys</p>
+        <p className="l-fine">Free and open source</p>
       </div>
-      <Evidence />
+      <SlatWord />
     </section>
   );
 }
@@ -150,7 +153,7 @@ function Answers() {
   return (
     <section id="answers" className="l-answers l-wrap">
       <div className="l-section-head" data-reveal>
-        <Eyebrow label="How Sift got there" />
+        <Eyebrow label="How it works" />
         <h2>One click. <em>Four answers.</em></h2>
         <p>The side panel reads the company for you while you're still on their homepage. These are its real parts.</p>
       </div>
