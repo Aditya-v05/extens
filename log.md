@@ -13,7 +13,11 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 - **Verified on `main` before pushing:**
   - compile, 123 tests, `wxt build`, smoke (31) and the site build all pass;
   - no `.mov`, clean source or keys staged;
-  - the production deploy and the live page are checked after the push (see the next lines of this entry).
+- **Live check after the push:**
+  - Vercel production deploy `success`;
+  - https://sift-through.vercel.app serves the new title and headline;
+  - `demo.mp4` returns 200 (video/mp4, 1.8 MB) and plays;
+  - no page errors.
 
 ---
 
