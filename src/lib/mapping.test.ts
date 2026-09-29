@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Answer } from './jev';
-import { applyRanks, mapFit, mapPersona, mapWhyNow } from './mapping';
+import { applyRanks, mapFit, mapPersona, mapSiteSignals, mapWhyNow } from './mapping';
 import type { Contact, Profile } from './types';
 
 const profile: Profile = {
@@ -77,5 +77,31 @@ describe('mapWhyNow', () => {
     ]);
     expect(w.signals[0]!.detail).toBe('Support Specialist, Customer Success Manager');
     expect(w.signals[0]!.evidence.map((e) => e.url)).toEqual(['https://j/2', 'https://j/1']);
+  });
+});
+
+describe('mapSiteSignals', () => {
+  const snip = (text: string, url = 'https://acme.com/blog/x', date: string | null = null) => ({ text, url, source: 'blog' as const, date });
+  const choice = (c: string, p: number) => ({ type: 'choice' as const, choice: c, confidence: p, probabilities: { [c]: p } });
+  it('groups by type, drops none and unsure labels, and quotes the most relevant snippet', () => {
+    const snippets = [
+      snip('SOC 2 Type II certified', 'https://acme.com/security'),
+      snip('Introducing Acme AI'),
+      snip('ISO 27001 certified', 'https://acme.com/security'),
+      snip('How we rebuilt our search index'),
+      snip('Maybe an expansion?'),
+    ];
+    const signals = mapSiteSignals({
+      site_type_0: choice('security_compliance', 0.9), site_rel_0: { type: 'noul', noul: 0.3 },
+      site_type_1: choice('ai_launch', 0.8), site_rel_1: { type: 'noul', noul: 0.6 },
+      site_type_2: choice('security_compliance', 0.85), site_rel_2: { type: 'noul', noul: 0.7 },
+      site_type_3: choice('none', 0.9), site_rel_3: { type: 'noul', noul: 0.9 },
+      site_type_4: choice('expansion', 0.4), site_rel_4: { type: 'noul', noul: 0.9 },
+    }, snippets);
+    expect(signals.map((s) => [s.siteType, s.label, s.detail, s.relevance, s.evidence.length])).toEqual([
+      ['security_compliance', 'Security & compliance', 'ISO 27001 certified', 0.7, 2],
+      ['ai_launch', 'Shipping AI', 'Introducing Acme AI', 0.6, 1],
+    ]);
+    expect(signals.every((s) => s.kind === 'site')).toBe(true);
   });
 });

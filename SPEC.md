@@ -87,7 +87,7 @@ Phone numbers · automated outbound · email/opener generation · sequences · C
 ```
 
 - **Stack:** WXT + React + TypeScript.
-- **Permissions:** `activeTab`, `sidePanel`, `storage`; host permissions only for `api.apollo.io` and `api.typesafe.ai`. No `<all_urls>`.
+- **Permissions:** `activeTab`, `scripting`, `sidePanel`, `storage`; host permissions only for `api.apollo.io` and `api.typesafe.ai`. No `<all_urls>`.
 - **Modules** (kept separate so a self-hosted server version is easy later): `resolver`, `apollo`, `jev`, `rules`, `pipeline`, `cache`, `store`.
 
 ## 6. Pipeline
@@ -152,6 +152,26 @@ Jev calls, run in parallel with the people ranking:
 
 Signals with relevance ≥ 0.5 are shown; the rest sit behind "Show less relevant signals". Labels are always written by code, never by the model.
 
+### Website signals (built)
+- **Access:** on an icon click, `chrome.scripting.executeScript` runs `scanSite` (`src/lib/site-scan.ts`) in that tab, using the `activeTab` grant. It runs with the page's origin, so it can fetch the same site's other pages without host permissions. There's no install warning and no "all sites" access.
+  - The function is serialized into the tab, so it must be self-contained. A unit test runs it via `new Function(fn.toString())`.
+  - If there's no grant (typed-in domain, tab navigated away) or the tab shows another site, the lookup continues without it (`siteStatus: 'unavailable'`).
+- **Pages:** the current page, plus pricing, blog, changelog and security. Links found on the current page are preferred; common paths are the fallback. That's 5 pages max, 5s timeout each, same origin only.
+- **Extraction (code):**
+  - Current page: headline and announcement lines ("Introducing…", "raised", "joins as"…).
+  - Pricing: enterprise/SSO/SCIM/contract lines.
+  - Security: SOC 2/ISO/HIPAA lines.
+  - Blog/changelog: post titles that link to their own page, with a date found near each item. Plain dates are read as UTC.
+  - Text glued from several elements is dropped as layout noise, and duplicates are removed.
+  - Dated posts older than 365 days are dropped; at most 30 snippets.
+- **Jev, per snippet** (batches of 10):
+  - a **Choice** over the fixed library in `src/lib/site-types.ts` (enterprise push, security/compliance, AI launch, product launch, pricing change, expansion, funding, acquisition, leadership, partnership, customer milestone, none);
+  - a **Noul** for relevance to the seller.
+  - Snippets whose type Jev is less than 0.5 sure of, or typed as none, are dropped. The rest are grouped into one signal per type.
+  - `eval/site-signals-eval.mjs`: 29/30 on real snippets.
+- **Display:** the code-written label (e.g. "Shipping AI") plus the page's own words as a quote, linked to the page and dated.
+- **Timing:** the timing Score also sees the website snippets.
+
 ### Decision 3 — Person: "Who most likely owns the problem?"
 - `persona` — **Choice** over the user's personas plus `none_fit`. Asked in Jev call #1.
 - `rank_<id>` — **Score** per candidate person (title, seniority, department): "How likely is this person to own the problem the seller solves?" Batched into one request. Sort by score and tie-break on seniority.
@@ -192,7 +212,7 @@ profile:   { rawAnswers, rules, personas, updatedAt }
 cache:     { [domain]: ResultObject }    // 7-day TTL
 saved:     { [domain]: ResultObject & { savedAt } }
 reveals:   { [apolloPersonId]: { email, status, revealedAt } }
-settings:  { monthlyBudget: number | null, fetchJobs: boolean }
+settings:  { monthlyBudget: number | null, fetchJobs: boolean, scanSite: boolean }
 credits:   { month: "YYYY-MM", company, jobs, reveal }   // spent by ICP Scout
 balance:   Apollo lead-credit balance (master keys) or { available: false }
 ```
@@ -239,7 +259,7 @@ Sanity check: for an example seller of support QA software, Linear scored 2.1/4 
 ## 13. Roadmap
 
 - ~~**v1.5 — Why now**~~ built. See §7, Decision 2.
-- **v2 — On-site signals:** a fixed signal library (enterprise tier, SOC 2, first sales hire, new region, AI launch). Pages are fetched with per-site optional permission, code extracts candidate snippets, and Jev judges them. Every signal carries URL + date + probability.
+- ~~**v2 — On-site signals**~~ built. See §7, "Website signals".
 - **v2+:** optional self-hosted relay for phone reveals, a "My Accounts" view, and "find more companies like my saved ones."
 
 ## 14. Open questions

@@ -19,6 +19,8 @@ export interface Settings {
   monthlyBudget: number | null;
   /** Fetch job postings for "why now" (1 extra credit per lookup). */
   fetchJobs: boolean;
+  /** Read the company's own pricing/blog/changelog/security pages (free). */
+  scanSite: boolean;
 }
 
 /** Apollo's own balance, readable only with a master API key. */
@@ -26,7 +28,7 @@ export type Balance =
   | { available: true; limit: number; consumed: number; leftOver: number; cycleEnd: string | null; checkedAt: number }
   | { available: false; checkedAt: number };
 
-export const DEFAULT_SETTINGS: Settings = { monthlyBudget: null, fetchJobs: true };
+export const DEFAULT_SETTINGS: Settings = { monthlyBudget: null, fetchJobs: true, scanSite: true };
 
 export function monthKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

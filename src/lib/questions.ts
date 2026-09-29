@@ -1,4 +1,6 @@
 import type { Question } from './jev';
+import { SITE_SIGNAL_TYPES } from './site-types';
+import type { Snippet } from './site-scan';
 import type { JobCandidate, SignalCandidate } from './signals';
 import type { Company, Contact, Profile } from './types';
 
@@ -105,11 +107,16 @@ export const TIMING_LEVELS = [
 export const jobId = (i: number) => `job_${i}`;
 export const signalId = (i: number) => `signal_${i}`;
 
-export function whyNowState(signals: SignalCandidate[], jobs: JobCandidate[]) {
+export function whyNowState(signals: SignalCandidate[], jobs: JobCandidate[], snippets: Snippet[] = []) {
   return {
     signals: signals.map((s) => s.fact),
     open_roles: jobs.map((j) => ({ title: j.title, days_open: j.daysOpen })),
+    ...(snippets.length ? { website: snippetState(snippets) } : {}),
   };
+}
+
+export function snippetState(snippets: Snippet[]) {
+  return snippets.map((s) => ({ text: s.text, page: s.source, date: s.date }));
 }
 
 /** Overall timing Score plus one yes/no per fact-based signal. */
@@ -118,7 +125,7 @@ export function whyNowQuestions(signals: SignalCandidate[]): Record<string, Ques
     timing: {
       type: 'score',
       instructions:
-        'Considering `signals` and `open_roles`, how strongly does the current situation at `company` suggest that now is a good time for the seller to reach out, given what the seller sells (`seller.sells`)?',
+        'Considering `signals`, `open_roles` and anything on the company\'s own `website`, how strongly does the current situation at `company` suggest that now is a good time for the seller to reach out, given what the seller sells (`seller.sells`)?',
       criteria: TIMING_LEVELS,
     },
   };
@@ -149,6 +156,32 @@ export function roleQuestions(count: number): Record<string, Question> {
         true: "Yes: this hire joins the team that uses or owns the seller's product.",
         false: "No: this hire is in another function (for example sales, engineering, design, recruiting, finance or product), unless that function is the one the seller's product serves.",
       },
+    };
+  }
+  return q;
+}
+
+// ---------- website signals ----------
+
+export const siteTypeId = (i: number) => `site_type_${i}`;
+export const siteRelId = (i: number) => `site_rel_${i}`;
+
+/**
+ * Per snippet: which signal type it shows (Choice over SITE_SIGNAL_TYPES) and whether it makes
+ * now a good time for this seller (Noul). Ids are local to the batch; state is `website`.
+ * Type wording checked by eval/site-signals-eval.mjs (29/30 on real snippets).
+ */
+export function siteQuestions(count: number): Record<string, Question> {
+  const q: Record<string, Question> = {};
+  for (let i = 0; i < count; i++) {
+    q[siteTypeId(i)] = {
+      type: 'choice',
+      instructions: `What does the website snippet \`website[${i}]\` (from \`company\`'s own site) announce or show about the company? Pick "none" for generic marketing copy, how-to or thought-leadership posts, and engineering write-ups.`,
+      criteria: { ...SITE_SIGNAL_TYPES },
+    };
+    q[siteRelId(i)] = {
+      type: 'noul',
+      instructions: `Given what the seller sells (\`seller.sells\`), does \`website[${i}]\` make now an especially good time for the seller to reach out to \`company\`?`,
     };
   }
   return q;

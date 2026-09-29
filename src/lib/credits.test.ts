@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addSpend, current, emptyLedger, lookupCost, monthKey, overBudget, parseBalance, totalSpent } from './credits';
+import { DEFAULT_SETTINGS, addSpend, current, emptyLedger, lookupCost, monthKey, overBudget, parseBalance, totalSpent } from './credits';
 
 describe('ledger', () => {
   it('adds spend by kind within a month', () => {
@@ -22,13 +22,13 @@ describe('ledger', () => {
 describe('budget', () => {
   const spent = { month: '2026-09', company: 8, jobs: 8, reveal: 2 }; // 18
   it('costs 2 per lookup with job postings, 1 without', () => {
-    expect(lookupCost({ monthlyBudget: null, fetchJobs: true })).toBe(2);
-    expect(lookupCost({ monthlyBudget: null, fetchJobs: false })).toBe(1);
+    expect(lookupCost({ ...DEFAULT_SETTINGS, monthlyBudget: null, fetchJobs: true })).toBe(2);
+    expect(lookupCost({ ...DEFAULT_SETTINGS, monthlyBudget: null, fetchJobs: false })).toBe(1);
   });
   it('blocks only when the next lookup would exceed the budget', () => {
-    expect(overBudget(spent, { monthlyBudget: 20, fetchJobs: true }, 2)).toBe(false);
-    expect(overBudget(spent, { monthlyBudget: 19, fetchJobs: true }, 2)).toBe(true);
-    expect(overBudget(spent, { monthlyBudget: null, fetchJobs: true }, 2)).toBe(false);
+    expect(overBudget(spent, { ...DEFAULT_SETTINGS, monthlyBudget: 20, fetchJobs: true }, 2)).toBe(false);
+    expect(overBudget(spent, { ...DEFAULT_SETTINGS, monthlyBudget: 19, fetchJobs: true }, 2)).toBe(true);
+    expect(overBudget(spent, { ...DEFAULT_SETTINGS, monthlyBudget: null, fetchJobs: true }, 2)).toBe(false);
   });
 });
 

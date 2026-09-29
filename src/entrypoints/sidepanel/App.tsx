@@ -229,8 +229,10 @@ function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
 
 const RELEVANT = 0.5;
 const SIGNAL_ICON: Record<Signal['kind'], string> = {
-  hiring: '🔥', hiring_volume: '📋', headcount_growth: '📈', headcount_decline: '📉', funding: '💰',
+  hiring: '🔥', hiring_volume: '📋', headcount_growth: '📈', headcount_decline: '📉', funding: '💰', site: '🌐',
 };
+
+const signalKey = (s: Signal) => `${s.kind}:${s.siteType ?? ''}`;
 
 function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
   const [showOthers, setShowOthers] = useState(false);
@@ -247,7 +249,7 @@ function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
         </span>
       </div>
       {relevant.length ? (
-        <ul className="signals">{relevant.map((s) => <SignalRow key={s.kind} signal={s} />)}</ul>
+        <ul className="signals">{relevant.map((s) => <SignalRow key={signalKey(s)} signal={s} />)}</ul>
       ) : (
         <div className="small muted">
           {whyNow.signals.length ? 'Nothing here looks especially relevant to what you sell.' : 'No timing signals found in Apollo.'}
@@ -258,11 +260,14 @@ function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
           <button className="link small" onClick={() => setShowOthers(!showOthers)}>
             {showOthers ? 'Hide' : 'Show'} {others.length} less relevant signal{others.length === 1 ? '' : 's'}
           </button>
-          {showOthers && <ul className="signals dim">{others.map((s) => <SignalRow key={s.kind} signal={s} />)}</ul>}
+          {showOthers && <ul className="signals dim">{others.map((s) => <SignalRow key={signalKey(s)} signal={s} />)}</ul>}
         </>
       )}
       {whyNow.jobsStatus === 'unavailable' && <div className="small muted">Job postings aren't available on this Apollo key.</div>}
       {whyNow.jobsStatus === 'off' && <div className="small muted">Hiring signals are off in Settings (saves 1 credit per lookup).</div>}
+      {whyNow.siteStatus === 'unavailable' && (
+        <div className="small muted">Website not read: click the toolbar icon while on the company's site to include it.</div>
+      )}
     </section>
   );
 }
@@ -270,6 +275,7 @@ function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
 function SignalRow({ signal: s }: { signal: Signal }) {
   const [open, setOpen] = useState(false);
   const links = s.evidence.filter((e) => e.url);
+  if (s.kind === 'site') return <SiteSignalRow signal={s} />;
   return (
     <li>
       <span className="icon" aria-hidden>{SIGNAL_ICON[s.kind]}</span>
@@ -293,6 +299,44 @@ function SignalRow({ signal: s }: { signal: Signal }) {
         )}
       </div>
     </li>
+  );
+}
+
+/** Website signals quote the page's own words and link to where they were found. */
+function SiteSignalRow({ signal: s }: { signal: Signal }) {
+  const [open, setOpen] = useState(false);
+  const [first, ...more] = s.evidence;
+  return (
+    <li>
+      <span className="icon" aria-hidden>{SIGNAL_ICON.site}</span>
+      <div className="grow">
+        <div className="row spread">
+          <strong>{s.label}</strong>
+          <span className="small muted" title="How relevant this is to what you sell">{pct(s.relevance)}</span>
+        </div>
+        {first && <Quote evidence={first} />}
+        {more.length > 0 && (
+          <>
+            <button className="link small" onClick={() => setOpen(!open)}>{open ? 'Hide' : `${more.length} more from their site`}</button>
+            {open && more.map((e, i) => <Quote key={i} evidence={e} />)}
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function Quote({ evidence: e }: { evidence: Signal['evidence'][number] }) {
+  const path = e.url ? new URL(e.url).pathname.replace(/\/$/, '') || '/' : null;
+  return (
+    <div className="quote small">
+      <span>“{e.label}”</span>
+      <span className="muted">
+        {' '}
+        {e.url && <a href={e.url} target="_blank" rel="noreferrer">{path}</a>}
+        {e.date && ` · ${new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`}
+      </span>
+    </div>
   );
 }
 

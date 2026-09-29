@@ -48,3 +48,5 @@
 .credit-bar > div { height: 100%; background: var(--accent); transition: width 0.3s; }
 .credit-bar.warn > div { background: var(--warn); }
 .credit-bar.bad > div { background: var(--bad); }
+
+.quote { margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--border); }

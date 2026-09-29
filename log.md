@@ -4,6 +4,39 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Website signals (v2)
+
+Why now now also reads the company's own website. Rule: every signal quotes the page and links to it.
+
+- **No new install warning.** An icon click gives `activeTab`. With the new `scripting` permission, `scanSite` runs inside that tab and fetches the same site's pricing, blog, changelog and security pages (it runs with the page's origin, so no host permissions). Costs no Apollo credits.
+- **`src/lib/site-scan.ts`** (self-contained, because Chrome serializes it into the tab) extracts:
+  - Current page: headline and announcement lines.
+  - Pricing: enterprise/SSO/SCIM/contract lines.
+  - Security: certifications.
+  - Blog/changelog: post titles with dates.
+- **Real-site tuning** (linear.app, intercom.com, gorgias.com, vercel.com, notion.com):
+  - Dropped text glued from several elements ("PulseInboxMy issues"): layout noise.
+  - Post titles must link to their own page; this removes section labels and headings inside a single post.
+  - Dates are read only near each item (Linear posts were all getting one date).
+  - Text is joined with spaces between elements, so "officeAug 3, 2026" becomes a readable date.
+  - Plain dates are read as UTC: "Aug 3" was coming out as Aug 2 in UTC+5:30.
+  - Duplicate snippets are removed.
+- **Fixed signal library** in `src/lib/site-types.ts`: enterprise push, security/compliance, AI launch, product launch, pricing change, expansion, funding, acquisition, leadership, partnership, customer milestone, none.
+- **Jev:** per snippet, a Choice (type) and a Noul (relevance), in batches of 10, run in parallel with the role batches.
+  - `eval/site-signals-eval.mjs`: **29/30** on real snippets. The miss: a third-party model's adoption stat labelled "AI launch".
+- **Real finds:** Notion: new CTO, ZeroEntropy acquisition, Notion 3.7 agent skills, SOC 2 / ISO. Intercom: "Salesforce signs definitive agreement to acquire Fin", Fin evals launch. Linear: SOC 2, Linear Agent.
+- **Panel:** 🌐 rows showing the label plus a verbatim quote, a link to the page path, and the date; "N more from their site" expands.
+  - If the site couldn't be read (e.g. a typed-in domain), the card says so.
+- **Settings:** a "Website signals" switch (default on). `WhyNow.siteStatus` is `'ok' | 'unavailable' | 'off'`.
+
+**Verified:**
+- 66 unit tests, including the reader on fixture HTML in two timezones, a standalone-serialization test, site-signal grouping, and snippet batch remapping.
+- The *built, minified* scanner was extracted from `background.js` and run standalone.
+- Real sites were scanned and the snippets judged by live Jev (~350ms).
+- Not yet clicked through in a real Chrome window.
+
+---
+
 ## 2026-09-29 — Role-judgment fix, credit tracking
 
 ### Why-now role judgments: wording + batching

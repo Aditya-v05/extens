@@ -19,7 +19,7 @@ export default defineBackground(() => {
     // Must be called synchronously inside the user gesture.
     browser.sidePanel.open({ windowId });
     const domain = domainFromUrl(tab.url);
-    if (domain) runLookup(windowId, domain);
+    if (domain) runLookup(windowId, domain, { tabId: tab.id });
     else setView(windowId, { status: 'not_company', url: tab.url ?? null });
   });
 
@@ -27,7 +27,10 @@ export default defineBackground(() => {
     const msg = raw as Message;
     switch (msg.type) {
       case 'lookup':
-        runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget });
+        // The active tab may still hold the activeTab grant (e.g. Refresh); the scan checks its host.
+        browser.tabs
+          .query({ active: true, windowId: msg.windowId })
+          .then(([tab]) => runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget, tabId: tab?.id }));
         sendResponse({ ok: true });
         return false;
       case 'refreshBalance':

@@ -1,5 +1,7 @@
 import { scoreToPercent, type Answer } from './jev';
-import { FIT_LEVELS, NONE_FIT, RANK_LEVELS, TIMING_LEVELS, checkId, jobId, rankId, signalId } from './questions';
+import { FIT_LEVELS, NONE_FIT, RANK_LEVELS, TIMING_LEVELS, checkId, jobId, rankId, signalId, siteRelId, siteTypeId } from './questions';
+import type { Snippet } from './site-scan';
+import { SITE_SIGNAL_LABELS, type SiteSignalType } from './site-types';
 import type { JobCandidate, SignalCandidate } from './signals';
 import type { Check, Contact, Fit, PersonaPick, Profile, Signal, WhyNow } from './types';
 
@@ -42,6 +44,7 @@ export function mapWhyNow(
   candidates: SignalCandidate[],
   jobs: JobCandidate[],
   jobsStatus: WhyNow['jobsStatus'],
+  site: { snippets: Snippet[]; status: NonNullable<WhyNow['siteStatus']> } = { snippets: [], status: 'off' },
 ): WhyNow {
   const noul = (id: string) => {
     const a = answers[id];
@@ -67,10 +70,40 @@ export function mapWhyNow(
     });
   }
 
+  signals.push(...mapSiteSignals(answers, site.snippets));
+
   const timing = answers.timing;
   return {
     timing: timing?.type === 'score' ? scoreToPercent(timing.score, TIMING_LEVELS.length) : null,
     signals: signals.sort((a, b) => b.relevance - a.relevance),
     jobsStatus,
+    siteStatus: site.status,
   };
+}
+
+/** Jev must be at least this sure of a snippet's type for it to count. */
+const SITE_TYPE_MIN = 0.5;
+
+/** Group typed snippets into one signal per type; the page's own words become the evidence. */
+export function mapSiteSignals(answers: Record<string, Answer>, snippets: Snippet[]): Signal[] {
+  const byType = new Map<SiteSignalType, { snippet: Snippet; rel: number }[]>();
+  snippets.forEach((snippet, i) => {
+    const t = answers[siteTypeId(i)];
+    if (t?.type !== 'choice' || t.choice === 'none' || !(t.choice in SITE_SIGNAL_LABELS)) return;
+    if ((t.probabilities[t.choice] ?? t.confidence) < SITE_TYPE_MIN) return;
+    const r = answers[siteRelId(i)];
+    const type = t.choice as SiteSignalType;
+    byType.set(type, [...(byType.get(type) ?? []), { snippet, rel: r?.type === 'noul' ? r.noul : 0 }]);
+  });
+  return [...byType].map(([type, items]) => {
+    items.sort((a, b) => b.rel - a.rel);
+    return {
+      kind: 'site' as const,
+      siteType: type,
+      label: SITE_SIGNAL_LABELS[type],
+      detail: items[0]!.snippet.text,
+      relevance: items[0]!.rel,
+      evidence: items.map(({ snippet }) => ({ label: snippet.text, url: snippet.url, date: snippet.date })),
+    };
+  });
 }

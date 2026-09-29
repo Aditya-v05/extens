@@ -325,6 +325,18 @@ function CreditsSection() {
         />
         <span>Hiring signals: fetch job postings for "why now" (+1 credit per lookup)</span>
       </label>
+
+      <label className="row checkbox">
+        <input
+          type="checkbox"
+          checked={settings.scanSite}
+          onChange={(e) => store.setSettings({ ...settings, scanSite: e.target.checked })}
+        />
+        <span>
+          Website signals: read the pricing, blog, changelog and security pages of the site you're on (free; only when you
+          click the icon; nothing leaves your browser except snippets sent to Jev)
+        </span>
+      </label>
     </section>
   );
 }

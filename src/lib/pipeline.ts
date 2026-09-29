@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser';
 import * as apollo from './apollo';
 import { lookupCost, overBudget, parseBalance, totalSpent, type Settings } from './credits';
 import { ApiError, toLookupError } from './errors';
@@ -6,12 +7,16 @@ import { applyRanks, mapFit, mapPersona, mapWhyNow } from './mapping';
 import type { Answer } from './jev';
 import {
   ROLE_BATCH, accountQuestions, companyState, jobId, peopleState, rankQuestions, roleQuestions, sellerState,
-  whyNowQuestions, whyNowState,
+  siteQuestions, siteRelId, siteTypeId, snippetState, whyNowQuestions, whyNowState,
 } from './questions';
+import { registrableDomain } from './resolver';
+import { scanSite, type SiteScan, type Snippet } from './site-scan';
 import { evaluateRules } from './rules';
 import { jobCandidates, signalCandidates, type JobCandidate, type SignalCandidate } from './signals';
 import * as store from './storage';
 import type { Keys, LookupResult, Profile, ViewState, WhyNow } from './types';
+
+const DAY = 24 * 60 * 60 * 1000;
 
 /** Used when no one matches the persona titles. */
 const FALLBACK_SENIORITIES = ['owner', 'founder', 'c_suite', 'partner', 'vp', 'head', 'director'];
@@ -26,10 +31,12 @@ export interface LookupOptions {
   force?: boolean;
   /** The user chose to go past their monthly credit budget. */
   allowOverBudget?: boolean;
+  /** Tab showing the company's site, for website signals (needs the activeTab grant from an icon click). */
+  tabId?: number;
 }
 
 export async function runLookup(windowId: number, domain: string, opts: LookupOptions = {}): Promise<void> {
-  const { force = false, allowOverBudget = false } = opts;
+  const { force = false, allowOverBudget = false, tabId } = opts;
   const token = Symbol(domain);
   runs.set(windowId, token);
   const show = async (v: ViewState) => {
@@ -59,7 +66,10 @@ export async function runLookup(windowId: number, domain: string, opts: LookupOp
   let partial: LookupResult | null = null;
   try {
     await show({ status: 'loading', domain, stage: 'company', partial: null });
-    partial = await lookup(keys!, profile!, settings, domain, async (stage, p) => {
+    // Reading the site is free and independent of Apollo, so it starts right away.
+    const site: Promise<SiteScan | null> =
+      settings.scanSite && tabId !== undefined ? scanTab(tabId, domain) : Promise.resolve(null);
+    partial = await lookup(keys!, profile!, settings, domain, site, async (stage, p) => {
       partial = p;
       await show({ status: 'loading', domain, stage, partial: p });
     });
@@ -76,7 +86,7 @@ export async function runLookup(windowId: number, domain: string, opts: LookupOp
 type Progress = (stage: 'judging' | 'ranking', partial: LookupResult) => Promise<void>;
 
 async function lookup(
-  keys: Keys, profile: Profile, settings: Settings, domain: string, progress: Progress,
+  keys: Keys, profile: Profile, settings: Settings, domain: string, site: Promise<SiteScan | null>, progress: Progress,
 ): Promise<LookupResult | null> {
   const org = await apollo.enrichOrganization(keys.apollo, domain);
   if (!org) return null;
@@ -109,41 +119,85 @@ async function lookup(
   const now = Date.now();
   const jobs = jobCandidates(Array.isArray(postings) ? postings : [], now);
   const signals = signalCandidates(org, jobs, now);
+  const scan = await site;
+  const snippets = scan ? freshSnippets(scan.snippets, now) : [];
+  const siteStatus: NonNullable<WhyNow['siteStatus']> = !settings.scanSite ? 'off' : scan ? 'ok' : 'unavailable';
   const [contacts, whyNow] = await Promise.all([
     found.contacts.length
       ? jev
           .ask(keys.typesafe, { ...state, best_persona: persona?.chosen ?? null, people: peopleState(found.contacts) }, rankQuestions(found.contacts))
           .then((rankAnswers) => store.withReveals(applyRanks(found.contacts, rankAnswers)))
       : Promise.resolve(found.contacts),
-    signals.length || jobs.length
-      ? judgeWhyNow(keys.typesafe, state, signals, jobs).then((a) => mapWhyNow(a, signals, jobs, jobsStatus))
-      : Promise.resolve({ timing: null, signals: [], jobsStatus }),
+    signals.length || jobs.length || snippets.length
+      ? judgeWhyNow(keys.typesafe, state, signals, jobs, snippets).then((a) =>
+          mapWhyNow(a, signals, jobs, jobsStatus, { snippets, status: siteStatus }),
+        )
+      : Promise.resolve({ timing: null, signals: [], jobsStatus, siteStatus }),
   ]);
   return { ...result, contacts, whyNow };
 }
 
+const chunk = <T,>(xs: T[], n: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));
+  return out;
+};
+
 /**
- * Timing + signals in one call, roles in parallel batches of ROLE_BATCH (long lists blur answers).
- * Returns answers keyed as mapWhyNow expects: job_<index into jobs>, signal_<i>, timing.
+ * Timing + signals in one call; roles and website snippets in parallel batches of ROLE_BATCH
+ * (long lists blur answers). Returns answers keyed as mapWhyNow expects, with batch-local ids
+ * remapped to global ones: job_<index into jobs>, site_type_/site_rel_<index into snippets>.
  */
 export async function judgeWhyNow(
-  key: string, state: object, signals: SignalCandidate[], jobs: JobCandidate[],
+  key: string, state: object, signals: SignalCandidate[], jobs: JobCandidate[], snippets: Snippet[] = [],
 ): Promise<Record<string, Answer>> {
-  const full = { ...state, ...whyNowState(signals, jobs) };
-  const batches: JobCandidate[][] = [];
-  for (let i = 0; i < jobs.length; i += ROLE_BATCH) batches.push(jobs.slice(i, i + ROLE_BATCH));
-  const [main, ...roleAnswers] = await Promise.all([
-    jev.ask(key, full, whyNowQuestions(signals)),
-    ...batches.map((batch) => jev.ask(key, { ...state, open_roles: whyNowState([], batch).open_roles }, roleQuestions(batch.length))),
+  const roleBatches = chunk(jobs, ROLE_BATCH);
+  const siteBatches = chunk(snippets, ROLE_BATCH);
+  const [main, roleAnswers, siteAnswers] = await Promise.all([
+    jev.ask(key, { ...state, ...whyNowState(signals, jobs, snippets) }, whyNowQuestions(signals)),
+    Promise.all(roleBatches.map((b) => jev.ask(key, { ...state, open_roles: whyNowState([], b).open_roles }, roleQuestions(b.length)))),
+    Promise.all(siteBatches.map((b) => jev.ask(key, { ...state, website: snippetState(b) }, siteQuestions(b.length)))),
   ]);
   const answers: Record<string, Answer> = { ...main };
-  roleAnswers.forEach((a, b) => {
-    for (let i = 0; i < batches[b]!.length; i++) {
-      const ans = a[jobId(i)];
-      if (ans) answers[jobId(b * ROLE_BATCH + i)] = ans;
-    }
-  });
+  const remap = (batchAnswers: Record<string, Answer>[], ids: ((i: number) => string)[]) =>
+    batchAnswers.forEach((a, b) => {
+      for (let i = 0; i < ROLE_BATCH; i++) {
+        for (const id of ids) {
+          const ans = a[id(i)];
+          if (ans) answers[id(b * ROLE_BATCH + i)] = ans;
+        }
+      }
+    });
+  remap(roleAnswers, [jobId]);
+  remap(siteAnswers, [siteTypeId, siteRelId]);
   return answers;
+}
+
+// ---------- website signals ----------
+
+const MAX_SNIPPETS = 30;
+/** Dated posts older than this aren't "now". Undated snippets (pricing, security, homepage) are current. */
+const SNIPPET_MAX_AGE_DAYS = 365;
+
+export function freshSnippets(snippets: Snippet[], now: number): Snippet[] {
+  return snippets
+    .filter((s) => !s.date || now - Date.parse(s.date) <= SNIPPET_MAX_AGE_DAYS * DAY)
+    .slice(0, MAX_SNIPPETS);
+}
+
+/**
+ * Run the site reader inside the user's tab. Only works while the tab still has the activeTab
+ * grant from the icon click, and only if it's showing this company's site.
+ */
+async function scanTab(tabId: number, domain: string): Promise<SiteScan | null> {
+  try {
+    const [res] = await browser.scripting.executeScript({ target: { tabId }, func: scanSite, args: [5] });
+    const scan = res?.result as SiteScan | undefined;
+    if (!scan || registrableDomain(scan.host.toLowerCase()) !== domain) return null;
+    return scan;
+  } catch {
+    return null; // no grant (typed-in domain, navigated away) or a page that blocks scripts
+  }
 }
 
 /** Job postings are a bonus: a key without access to them shouldn't break the lookup. */
@@ -203,7 +257,6 @@ export async function revealContact(windowId: number, domain: string, personId: 
 
 // ---------- credit balance ----------
 
-const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Re-read Apollo's credit balance. Only master keys can; for other keys we remember

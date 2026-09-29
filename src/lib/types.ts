@@ -1,3 +1,5 @@
+import type { SiteSignalType } from './site-types';
+
 export interface Keys {
   apollo: string;
   typesafe: string;
@@ -91,10 +93,12 @@ export interface Evidence {
   date?: string | null;
 }
 
-export type SignalKind = 'hiring' | 'hiring_volume' | 'headcount_growth' | 'headcount_decline' | 'funding';
+export type SignalKind = 'hiring' | 'hiring_volume' | 'headcount_growth' | 'headcount_decline' | 'funding' | 'site';
 
 export interface Signal {
   kind: SignalKind;
+  /** For kind 'site': which type from the fixed library (SITE_SIGNAL_TYPES). */
+  siteType?: SiteSignalType;
   /** Written by code from facts, never by a model. */
   label: string;
   detail?: string;
@@ -110,6 +114,11 @@ export interface WhyNow {
   signals: Signal[];
   /** ok, unavailable (not on the key's plan), or off (turned off in Settings to save credits). */
   jobsStatus: 'ok' | 'unavailable' | 'off';
+  /**
+   * Website signals: ok, unavailable (no access to a tab on this company's site, e.g. a typed-in
+   * domain), or off (turned off in Settings). Missing on results cached before website signals.
+   */
+  siteStatus?: 'ok' | 'unavailable' | 'off';
 }
 
 export interface LookupResult {
