@@ -15,7 +15,11 @@ export const results = {
     fit: { score: 35, confidence: 0.4, checks: checks(true, true, true, false) }, persona: { chosen: 'Head of Support', confidence: 0.6, distribution: {} },
     contacts: [contact('l1', 'Erin', 'Frey', 'Customer Experience', 72), contact('l2', 'Cristina', 'Cordova', 'Chief Operating Officer', 56, 'cr@linear.app')],
     whyNow: { timing: 66, jobsStatus: 'ok', siteStatus: 'ok', signals: [
-      sig('hiring', 'Hiring 3 relevant roles', 'Product Support Specialist, Customer Success Manager, Customer Success Manager, Growth', 0.78, [{ label: 'Product Support Specialist', url: 'https://linear.app/careers/1' }]),
+      sig('hiring', 'Hiring 3 relevant roles', 'Product Support Specialist, Customer Success Manager, Customer Success Manager, Growth', 0.78, [
+        { label: 'Product Support Specialist', url: 'https://linear.app/careers/1' },
+        { label: 'Customer Success Manager', url: 'https://linear.app/careers/2' },
+        { label: 'Customer Success Manager, Growth', url: 'https://linear.app/careers/3' },
+      ]),
       sig('headcount_growth', 'Headcount +21% in 6 months', '+42% in 12 months', 0.55, [{ label: 'Apollo headcount data' }]),
       sig('site', 'Security & compliance', 'SOC 2 compliance', 0.42, [{ label: 'SOC 2 compliance', url: 'https://linear.app/security' }, { label: 'ISO 27001 certified', url: 'https://linear.app/security' }], 'security_compliance'),
     ] },

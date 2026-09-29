@@ -57,7 +57,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
   switch (view.status) {
     case 'idle':
       return (
-        <Empty title="Open a company's website" body="Then click the Sift icon in your toolbar.">
+        <Empty title="Open a company's website" body="Then click the Sift icon in your toolbar, or press Alt+Shift+S (⌥⇧S on a Mac).">
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );

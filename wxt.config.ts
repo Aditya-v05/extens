@@ -10,5 +10,12 @@ export default defineConfig({
     permissions: ['activeTab', 'scripting', 'sidePanel', 'storage'],
     host_permissions: ['https://api.apollo.io/*', 'https://api.typesafe.ai/*'],
     action: { default_title: 'Sift this company' },
+    // Same as clicking the icon (and grants the same one-tab access). Changeable at chrome://extensions/shortcuts.
+    commands: {
+      _execute_action: {
+        suggested_key: { default: 'Alt+Shift+S', mac: 'Alt+Shift+S' },
+        description: 'Sift the company site in this tab',
+      },
+    },
   },
 });

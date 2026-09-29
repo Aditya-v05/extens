@@ -2,7 +2,9 @@
 
 <img src="public/icon/128.png" width="64" alt="Sift">
 
-An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon, and a side panel tells you:
+[![CI](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml/badge.svg)](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml)
+
+An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon (or press **Alt+Shift+S**, ⌥⇧S on a Mac), and a side panel tells you:
 
 1. **Does this company fit my ICP?** A fit score driven mostly by your own requirements (met / near miss / unsure / not met), with Jev's overall judgment as a smaller part.
 2. **Why now?** Hiring for roles your product serves, headcount growth, recent funding, plus what the company's own site says: enterprise plans, SOC 2, AI launches, acquisitions, new executives. Each signal links to its source; website signals quote the page word for word.
@@ -16,6 +18,8 @@ An open-source Chrome extension for anyone doing outbound. Open a company's webs
 Company and people data come from **Apollo**. Judgments come from **Jev**, [TypeSafe](https://typesafe.ai)'s System One model. You bring both API keys.
 
 ## Privacy
+
+Full policy: [PRIVACY.md](PRIVACY.md).
 
 - No server, no account, no telemetry.
 - Your keys and data stay in this browser (`chrome.storage.local`) and are only sent to `api.apollo.io` and `api.typesafe.ai`.
@@ -38,7 +42,11 @@ Results are cached per domain for 7 days, so revisits are free. Revealed emails 
 
 The side panel shows a **credit bar**. With an Apollo *master* API key it shows your team's real balance. Other keys can't read the balance, so Sift counts its own spending this month instead. You can set a **monthly budget**: once it's reached, new lookups ask before spending.
 
-## Install (from source)
+## Install
+
+Chrome Web Store: submission kit in [`store/`](store/) (listing text, permission justifications, screenshots). Until it's listed, install from source:
+
+### From source
 
 ```bash
 npm install
@@ -86,7 +94,11 @@ APOLLO_KEY=... TYPESAFE_KEY=... npm test   # also runs the live end-to-end test 
 TYPESAFE_KEY=... node eval/roles-eval.mjs  # compares role-question wordings on labelled roles
 TYPESAFE_KEY=... node eval/site-signals-eval.mjs  # checks website-snippet labelling
 SITES=https://linear.app/ npx vitest run src/lib/site-scan.live.test.ts --silent=false  # website reader on real sites
-npm run build && npm run smoke             # loads the built extension in Chromium, checks My Accounts, screenshots every page (no API calls)
+npm run build && npm run smoke             # loads the built extension in Chromium, checks the UI, screenshots every page (no API calls)
+npm run build && npm run store-shots       # regenerates the Chrome Web Store images in store/
+npm run zip                                # packages .output/sift-<version>-chrome.zip for upload
+
+CI (`.github/workflows/ci.yml`) runs the type-check, unit tests, build and smoke test on every push. It needs no API keys and spends no credits.
 ```
 
 Code map:

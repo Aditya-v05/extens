@@ -4,6 +4,22 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Ready to share: CI, store kit, shortcut, v0.2.0
+
+- **Phones are parked.** The user's Apollo account has 0 of 2,500 direct-dial (phone) credits left this cycle, and phone reveals need a webhook relay, i.e. a backend.
+- **CI** (`.github/workflows/ci.yml`): on every push and PR it runs type-check, unit tests, build, then Playwright's Chromium and the smoke test, and uploads the screenshots. No API keys; the live tests skip themselves.
+- **Chrome Web Store kit:**
+  - `PRIVACY.md`: what's stored locally, what goes to Apollo and TypeSafe, website access only on click, no Sift server.
+  - `store/listing.md`: name, 132-character summary, description, single purpose, a justification for each permission, data disclosures, privacy policy URL.
+  - `npm run store-shots` (`e2e/store-shots.mjs`) renders the real built extension with sample data: 3 panel shots (fit, contacts, why now) beside a short headline, My Accounts, Discover, and a 440×280 promo tile with the icon. Each panel shot shows one part of the panel.
+- **Keyboard shortcut:** `_execute_action` at Alt+Shift+S (⌥⇧S on a Mac). It works like clicking the icon, including the one-tab access. The panel's empty state mentions it.
+- **Version 0.2.0**, `engines.node >= 22`, `npm run zip` for the upload package.
+- README: CI badge, shortcut, privacy link, install section, the new scripts.
+
+**Verified:** 105 unit tests, tsc, build, smoke 26/26, zip built, store images reviewed.
+
+---
+
 ## 2026-09-29 — "Who to look for": the people filters, in Settings
 
 > "should we maybe just uhm recreate the apollo filters ?"
