@@ -4,6 +4,19 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — CI fix: keep the video project out of the extension's type check
+
+> "somehting failed?" (GitHub's "CI: All jobs have failed" email after the release)
+
+- **What failed:** CI's type check on `main`. The root `tsconfig.json` inherits WXT's `include: ../**/*`, so it also compiled `video/`, the Remotion project. Its dependencies live in `video/node_modules`, which exists on this machine but is never installed in CI, so `remotion` could not be found. The production site was not affected, since Vercel's build doesn't type-check `video/`.
+- **Fix:** the root `tsconfig.json` excludes `video` (with `node_modules` and `.output`, since `exclude` replaces the inherited list). `video/` keeps its own `tsconfig`.
+- **Verified:**
+  - `npm run compile` passes with `video/node_modules` moved away, reproducing CI;
+  - 123 tests pass;
+  - the CI run for this commit is watched to the end.
+
+---
+
 ## 2026-09-30 — Shipped: landing redesign and Sift this page are live
 
 > "beautiful lets push and deploy"
