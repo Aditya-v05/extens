@@ -109,7 +109,7 @@ main p { line-height: 1.6; }
 .l-vortex { position: absolute; inset: 0; }
 .l-fx { position: absolute; inset: 0; z-index: 1; animation: l-fade 1.6s var(--ease-out) both; }
 .l-wordmark {
-  position: absolute; z-index: 0; left: 50%; top: var(--vy, 42%); transform: translate(-50%, -50%);
+  position: absolute; z-index: -1; left: 50%; top: 50%; transform: translate(-50%, -46%);
   font-weight: 800; letter-spacing: -0.03em; line-height: 0.72; white-space: nowrap; font-size: clamp(150px, 30vw, 470px);
   color: transparent; -webkit-text-stroke: 1px rgba(159, 242, 214, 0.16); user-select: none; pointer-events: none;
   animation: l-fade 2s var(--ease-out) 0.3s both;
@@ -121,6 +121,7 @@ main p { line-height: 1.6; }
   animation: l-fade 1.2s var(--ease-out) 0.4s both, l-breathe 4s var(--ease-move) 1.6s infinite;
 }
 @keyframes l-breathe { 50% { box-shadow: 0 0 0 7px rgba(159, 242, 214, 0.1), 0 0 34px 10px rgba(159, 242, 214, 0.55), 0 0 110px 36px rgba(159, 242, 214, 0.14); } }
+.l-headline { position: relative; }
 .l-hero-copy { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; }
 .l-hero h1 { font-size: clamp(50px, 7.2vw, 100px); line-height: 0.96; letter-spacing: -0.03em; animation: l-sharp 0.9s var(--ease-out) 0.15s both; text-wrap: balance; }
 .l-hero h1 em { color: var(--mint); }

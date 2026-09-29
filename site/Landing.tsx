@@ -103,13 +103,8 @@ function Nav() {
 
 // ---------- hero: the vortex, big and centred; the headline under it ----------
 
-/** The outline wordmark behind the swirl, and the selection point where the few worth your time end up. */
-const Core = () => (
-  <>
-    <div className="l-wordmark" aria-hidden>SIFT</div>
-    <div className="l-core" aria-hidden />
-  </>
-);
+/** The selection point: where the few worth your time end up. */
+const Core = () => <div className="l-core" aria-hidden />;
 
 function Hero() {
   return (
@@ -118,9 +113,12 @@ function Hero() {
         <LazyVortex><Core /></LazyVortex>
       </Suspense>
       <div className="l-hero-copy">
-        <h1>
-          Know who's worth <em>talking to.</em>
-        </h1>
+        <div className="l-headline">
+          <div className="l-wordmark" aria-hidden>SIFT</div>
+          <h1>
+            Know who's worth <em>talking to.</em>
+          </h1>
+        </div>
         <p className="l-lede">
           Sift qualifies any company you visit, finds why they matter now, and surfaces the right person to contact. One click,
           on your own Apollo and Jev keys.

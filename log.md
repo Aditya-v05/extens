@@ -4,6 +4,19 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing: wordmark behind the headline (branch `site-redesign`)
+
+> "can we have the sift word below the swirl like behind the hero text - know who's worth talking part"
+
+- **What changed:** the outline "SIFT" moved out of the vortex into the hero copy. It is centred on the headline and sits behind it (z-index -1 inside the copy). The swirl is now clear above it, and the letters' top edge just meets the swirl's lower rim.
+- **Verified:**
+  - screenshots at 1440 and 390 px (the text stays legible over the 16% stroke);
+  - no overflow or page errors;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
 ## 2026-09-30 — Landing: portfolio and email in the maker strip (branch `site-redesign`)
 
 > "add my portfolio in the contact part and this along with my email"
