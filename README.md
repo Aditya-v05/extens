@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml/badge.svg)](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml)
 
-**Website:** https://sift-rosy-omega.vercel.app
+**Website:** https://sift-through.vercel.app
 
 An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon (or press **Alt+Shift+S**, ⌥⇧S on a Mac), and a side panel tells you:
 
