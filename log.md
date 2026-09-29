@@ -4,6 +4,32 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Sift this page: re-sift after switching tabs
+
+> "we need a refresh button like once i switch to different site with the panel open i need to have a button the re-sifts if it doesnt"
+
+- **What:**
+  - when the active tab is no longer the one the panel's result came from (you switched tabs, or that tab loaded another page), a line appears under the credit bar: "This tab has changed. Still showing gorgias.com." with **Sift this page**;
+  - the same button is on the empty, not-a-company and LinkedIn-feed states.
+- **Why a permission:**
+  - Chrome only gives an extension a tab's address after its icon or shortcut is used, and a click inside the side panel doesn't count;
+  - so the button asks once for the optional `tabs` permission, inside the click, then reads the active tab's address only at that moment;
+  - it is not requested at install, and switching tabs only compares tab ids, which need no permission;
+  - if you decline, the panel says to use the icon or Alt+Shift+S.
+- **Limit:** lookups started from the button can't scan the website (that needs the icon's grant), so website signals show as unavailable for uncached companies. Apollo data, fit, hiring, headcount, funding and contacts all work.
+- **How:**
+  - the background records the source tab on every sift (`setViewTab`);
+  - `useTabSwitched` in `src/components/SiftThisPage.tsx` compares it with the active tab;
+  - a new `siftTab` message reuses the icon-click path (`siftTab()` in background);
+  - PRIVACY, README, SPEC, the store listing and the landing privacy line are updated.
+- **Verified:**
+  - compile and 123 tests pass;
+  - `wxt build`: the manifest lists `tabs` only under `optional_permissions`;
+  - smoke now has 30 checks: the bar appears when the result's tab isn't the active one, disappears when it is, and "Sift this page" shows on pages Sift can't use;
+  - not verified: the Chrome permission prompt itself (headless Chromium can't show it). Worth one manual try: click Sift on a site, switch tabs, press Sift this page, allow.
+
+---
+
 ## 2026-09-30 — Landing: wordmark behind the headline (branch `site-redesign`)
 
 > "can we have the sift word below the swirl like behind the hero text - know who's worth talking part"

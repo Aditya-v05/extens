@@ -165,3 +165,25 @@ export function onViewChange(windowId: number, cb: (v: ViewState) => void): () =
   browser.storage.onChanged.addListener(listener);
   return () => browser.storage.onChanged.removeListener(listener);
 }
+
+/** Which tab the window's current result was sifted from (icon, shortcut, or "Sift this page"). */
+const viewTabKey = (windowId: number) => `viewTab_${windowId}`;
+export type ViewTab = { tabId: number; at: number };
+
+export async function setViewTab(windowId: number, tabId: number): Promise<void> {
+  await browser.storage.session.set({ [viewTabKey(windowId)]: { tabId, at: Date.now() } satisfies ViewTab });
+}
+
+export async function getViewTab(windowId: number): Promise<ViewTab | null> {
+  const out = await browser.storage.session.get(viewTabKey(windowId));
+  return (out[viewTabKey(windowId)] as ViewTab | undefined) ?? null;
+}
+
+export function onViewTabChange(windowId: number, cb: (v: ViewTab) => void): () => void {
+  const key = viewTabKey(windowId);
+  const listener = (changes: Record<string, { newValue?: unknown }>, area: string) => {
+    if (area === 'session' && changes[key]?.newValue) cb(changes[key].newValue as ViewTab);
+  };
+  browser.storage.onChanged.addListener(listener);
+  return () => browser.storage.onChanged.removeListener(listener);
+}

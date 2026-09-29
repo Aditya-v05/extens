@@ -5,6 +5,7 @@ import { ago, pct } from '@/components/format';
 import { ContactPicker, contactName } from '@/components/ContactPicker';
 import { RequirementStrip, StateIcon } from '@/components/Icon';
 import { checkState, checksSummary, upgradeFit } from '@/lib/mapping';
+import { SiftThisPage, useTabSwitched } from '@/components/SiftThisPage';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
@@ -45,9 +46,18 @@ export default function App() {
     if (windowId !== null) send({ type: 'lookup', windowId, domain, force, allowOverBudget, profileUrl });
   };
 
+  const shown = viewSubject(view);
+  const switched = useTabSwitched(windowId);
+
   return (
     <main className="panel">
       {view.status !== 'needs_setup' && <CreditBar credits={credits} onSettings={openSettings} />}
+      {switched && shown && (
+        <div className="switched row spread small">
+          <span className="muted">This tab has changed. Still showing {shown}.</span>
+          <SiftThisPage windowId={windowId} className="link small primary" />
+        </div>
+      )}
       <Body view={view} windowId={windowId} lookup={lookup} cost={cost} />
       <footer className="row spread small muted">
         <button className="link small" onClick={() => openAccounts()}>My Accounts</button>
@@ -57,6 +67,20 @@ export default function App() {
   );
 }
 
+/** What the panel is currently showing, in a few words; null when there is nothing to go stale. */
+function viewSubject(view: ViewState): string | null {
+  switch (view.status) {
+    case 'loading': case 'error': case 'done': case 'not_found': case 'over_budget':
+      return view.domain;
+    case 'profile_no_company':
+      return contactName(view.person);
+    case 'not_company':
+      return 'the previous page';
+    default:
+      return null;
+  }
+}
+
 type Lookup = (domain: string, force?: boolean, allowOverBudget?: boolean, profileUrl?: string) => void;
 
 function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: number | null; lookup: Lookup; cost: number }) {
@@ -64,6 +88,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
     case 'idle':
       return (
         <Empty title="Open a company's website" body="Then click the Sift icon in your toolbar, or press Alt+Shift+S (⌥⇧S on a Mac).">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
@@ -79,10 +104,12 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
     case 'not_company':
       return isLinkedin(view.url) ? (
         <Empty title="Open a person's profile" body="On LinkedIn, Sift works on people's profiles: it finds who they are, their company's fit, and where they rank. Or type the company's domain.">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       ) : (
-        <Empty title="This isn't a company website" body="Open a company's site and click the icon again, or type a domain.">
+        <Empty title="This isn't a company website" body="Open a company's site and press Sift this page, or type a domain.">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );

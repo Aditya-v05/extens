@@ -39,9 +39,16 @@ Sift reads a website only when you click its icon (or press its shortcut) on tha
 the same site's public pricing, blog, changelog and security pages, and sends short snippets from them to TypeSafe for
 labelling. You can turn this off in Settings. Sift never reads other tabs, your browsing history, or pages you don't click on.
 
+The panel's **Sift this page** button looks up the tab you're on without going back to the icon. The first time you press it,
+Chrome asks you to allow the optional `tabs` permission (Chrome words it as "read your browsing history"). Sift uses it only to
+read the active tab's address at the moment you press the button. Switching tabs is noticed (so the panel can offer the button)
+but no address is read. Lookups started this way skip the website scan, because Chrome only lets extensions read a page after its
+icon is clicked. You can remove the permission any time at chrome://extensions.
+
 ## Permissions
 
 - `activeTab`, `scripting`: read the current tab's address and that site's public pages, only when you click the icon.
+- `tabs` (optional, asked for on first use of Sift this page): read the active tab's address when you press that button.
 - `sidePanel`: show results next to the page.
 - `storage`: keep the data listed above in your browser.
 - Host access to `api.apollo.io` and `api.typesafe.ai` only.

@@ -321,7 +321,7 @@ function Privacy() {
           <ul>
             <li>No Sift server, no account, no analytics.</li>
             <li>Keys, profile and saved accounts stay in Chrome's local storage.</li>
-            <li>Sift reads a site only when you click its icon there. On LinkedIn, only the address.</li>
+            <li>Sift reads a site only when you click its icon there, or press Sift this page. On LinkedIn, only the address.</li>
           </ul>
           <a className="l-btn glass" href={PRIVACY}>Read the privacy policy</a>
         </div>

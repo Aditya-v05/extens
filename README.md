@@ -27,7 +27,7 @@ Full policy: [PRIVACY.md](PRIVACY.md).
 
 - No server, no account, no telemetry.
 - Your keys and data stay in this browser (`chrome.storage.local`) and are only sent to `api.apollo.io` and `api.typesafe.ai`.
-- Permissions: `activeTab` and `scripting` (only when you click the icon: read the tab's URL, and read that same site's pricing, blog, changelog and security pages), `sidePanel`, `storage`. There's no "read all websites" permission and no access to your browsing unless you click.
+- Permissions: `activeTab` and `scripting` (only when you click the icon: read the tab's URL, and read that same site's pricing, blog, changelog and security pages), `sidePanel`, `storage`. There's no "read all websites" permission and no access to your browsing unless you click. Optional `tabs`: asked for only if you use **Sift this page** in the panel (re-sift after switching tabs), to read that tab's address when you press it.
 - Website signals send short public snippets from the company's own pages to Jev for labelling. You can turn this off in Settings.
 
 ## Costs
