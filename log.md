@@ -4,6 +4,33 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing page v3: centred funnel hero, Meridian-style sections (branch `site-redesign`, preview only)
+
+> "this part makes little sense - id like to have the hero section text alligned tpo thew center with the particle funekling in the middle - also it looks pretty bland and boring … the header and footer are lackluster https://meridian-ind.vercel.app/"
+
+- **Research (Playwright):** Meridian closely (framed deep-green hero card, dot-grid corners, floating glass pill nav, serif headings with mono labels, numbered sections, tinted cards, a giant cropped wordmark), plus Attio, Clay, Wispr, incident.io, Linear and Polar.
+- **Hero:**
+  - a framed dark card with dot-grid corners;
+  - example domains at the top fall into a centred funnel onto the Sift mark (`SiftField.tsx` rewritten). About 1 in 13 dots pass, turn mint and stream into a result pill: "Ingrid Holm, VP Customer Experience 92";
+  - centred copy in Instrument Serif, mono eyebrow, mint and glass buttons, a stats row (1 click, 4 answers, 0 servers, 2 credits) and an outline "SIFT" wordmark.
+- **Nav:** a floating glass pill (blur, border, depth) that tightens on scroll.
+- **Scroll story replaced.** The iframe story didn't read well. It is now four numbered answers (01 fit, 02 why now, 03 who to email, 04 LinkedIn), each beside a tinted stage holding the *real* panel component (`FitCard`, `WhyNowCard`, `ContactPicker`, `ProfileCard`, now exported from `App.tsx`; nothing else changed). The panel iframe files are removed.
+- **Also:**
+  - "After the click" as dark and light tiles;
+  - costs on tinted cards;
+  - privacy as a full-bleed night band;
+  - a dark closing card with the field;
+  - a new footer with three link columns (including the changelog) and a giant gradient "SIFT" wordmark.
+- **Fonts:** Instrument Serif and JetBrains Mono (self-hosted via fontsource).
+- **Verified:**
+  - Playwright QA: every reveal fires, the nav scrolled state works, no horizontal overflow at 390 px, content visible under reduced motion, card hover lift -4 px, no page errors;
+  - screenshots reviewed (fixed the footer wordmark letters colliding and the result pill width on mobile);
+  - `og.png` regenerated from the new hero;
+  - `npm run compile`, 123 tests, `wxt build`, and smoke (28 checks) pass.
+  - The no-slop-motion linter flags 10 soft shadows. They are kept on purpose: layered white cards on tinted stages and the glass nav are the Meridian depth the user asked for.
+
+---
+
 ## 2026-09-30 — Landing page redesign (branch `site-redesign`, preview only)
 
 > "can we make the site atleast a bit better this is super bland lets give it some life … visit multiple yc company landing pages … u can use three js"

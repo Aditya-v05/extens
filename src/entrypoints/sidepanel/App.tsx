@@ -231,7 +231,7 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
 }
 
 /** Opened from a LinkedIn profile: who this is, their email, and where they rank among the people found. */
-function ProfileCard({ result }: { result: LookupResult }) {
+export function ProfileCard({ result }: { result: LookupResult }) {
   const [copied, setCopied] = useState(false);
   const contacts = result.contacts ?? [];
   const i = contacts.findIndex((c) => c.apolloId === result.profile!.apolloId);
@@ -276,7 +276,7 @@ function ProfileCard({ result }: { result: LookupResult }) {
   );
 }
 
-function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
+export function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
   const tone = fit.score >= 70 ? 'good' : fit.score >= LOW_FIT ? 'warn' : 'bad';
   const word = fit.score >= 70 ? 'Strong fit' : fit.score >= LOW_FIT ? 'Partial fit' : 'Weak fit';
   const explained = fit.requirements !== undefined && fit.requirements !== null && fit.overall !== undefined;
@@ -305,7 +305,7 @@ function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
 const RELEVANT = 0.5;
 const signalKey = (s: Signal) => `${s.kind}:${s.siteType ?? ''}`;
 
-function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
+export function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
   const [showOthers, setShowOthers] = useState(false);
   const relevant = whyNow.signals.filter((s) => s.relevance >= RELEVANT);
   const others = whyNow.signals.filter((s) => s.relevance < RELEVANT);

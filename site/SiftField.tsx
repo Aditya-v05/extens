@@ -2,63 +2,72 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /*
- * The hero: sifting, literally. Thousands of faint dots (companies) fall toward a sieve. Most bounce off
- * to the sides and fade; a few pass through, turn the teal of Sift's mark, and funnel into one stream that
- * runs down into the product below. The pointer pushes dots aside.
+ * Sifting, literally. Dots (companies) leave the top of the field, fall onto the sieve (where the page
+ * puts the Sift mark), and most are flung aside and fade. About 1 in 14 passes, turns the mark's mint,
+ * and runs down a narrow stream into whatever the page puts at the bottom (the result pill).
  *
- * Every dot's position is a pure function of time and its seed, computed in the vertex shader, so the
- * main thread does nothing per frame but update two uniforms.
+ * Coordinates are the canvas's own: y from 1 (top) to -1 (bottom), x scaled by the aspect ratio.
+ * Every dot's position is a pure function of time and its seed (vertex shader), so the main thread only
+ * updates two uniforms per frame.
  */
 
+export interface FieldProps {
+  count?: number;
+  /** Where dots appear, where the sieve sits, and where the stream ends (canvas y, 1 = top). */
+  top?: number;
+  sieve?: number;
+  bottom?: number;
+  /** Half-width of where dots start, in canvas units (1 = half the canvas height). */
+  width?: number;
+  /** Half-width of the visible sieve line. 0 hides it (when the page draws the mark itself). */
+  span?: number;
+  /** Share of dots that pass. */
+  pass?: number;
+}
+
 const VERT = /* glsl */ `
-  attribute vec4 aSeed;          // x: start x (-1..1), y: speed, z: passes the sieve (0/1), w: phase
+  attribute vec4 aSeed;   // x: start (-1..1), y: speed, z: passes (0/1), w: phase
   attribute float aSize;
-  attribute float aNear;         // 1: falls near the stream, so the funnel reads; 0: anywhere
-  uniform float uTime;
-  uniform float uAspect;
-  uniform vec2 uMouse;           // in the same space as positions
-  uniform float uSieve;          // y of the sieve
-  uniform vec2 uCenter;          // where the stream runs
-  uniform float uDpr;
+  uniform float uTime, uAspect, uTop, uSieve, uBottom, uWidth, uDpr;
+  uniform vec2 uMouse;
   varying float vAlpha;
   varying float vPass;
 
   void main() {
-    float p = fract(uTime * aSeed.y + aSeed.w);          // 0 at the top, 1 at the bottom
-    float y = 1.15 - p * 2.5;
-    float x = (aNear > 0.5 ? uCenter.x + aSeed.x * 0.62 : aSeed.x * uAspect * 1.05) + sin(uTime * 0.6 + aSeed.w * 40.0) * 0.012;
-    float below = clamp((uSieve - y) / 0.9, 0.0, 1.0);   // how far past the sieve
+    float p = fract(uTime * aSeed.y + aSeed.w);
+    float y = uTop - p * (uTop - uBottom + 0.25);
+    float x = aSeed.x * uWidth + sin(uTime * 0.7 + aSeed.w * 40.0) * 0.01;
     float pass = aSeed.z;
-    float alpha = 0.34;
+    float below = clamp((uSieve - y) / max(uSieve - uBottom, 0.1), 0.0, 1.0);
+    float alpha = 0.42;
+
+    // On the way down, everything drifts gently toward the sieve.
+    float above = clamp((uTop - y) / max(uTop - uSieve, 0.1), 0.0, 1.0);
+    x *= mix(1.0, 0.55, above * above);
 
     if (y < uSieve) {
       if (pass > 0.5) {
-        // Through the sieve: pulled into a narrow stream, brighter.
-        float k = smoothstep(0.0, 1.0, below * 1.6);
-        float lane = (fract(aSeed.w * 7.0) - 0.5) * 0.09;
-        x = mix(x, uCenter.x + lane, k);
-        alpha = mix(0.5, 0.95, k);
+        float k = smoothstep(0.0, 0.35, below);
+        x = mix(x, (fract(aSeed.w * 7.0) - 0.5) * 0.05, k);
+        alpha = mix(0.6, 1.0, k) * (1.0 - smoothstep(0.85, 1.0, below));   // absorbed at the bottom
       } else {
-        // Rejected: a brief flash as it hits the sieve, then flung sideways, fading out.
-        float side = sign(x - uCenter.x + 0.0001);
-        x += side * below * below * 1.4;
-        y += below * 0.12;
-        float hit = 1.0 - smoothstep(0.0, 0.06, below);
-        alpha = (0.34 + hit * 0.4) * (1.0 - smoothstep(0.0, 0.35, below));
+        float side = sign(x + 0.0001);
+        float hit = 1.0 - smoothstep(0.0, 0.05, below);
+        x += side * below * below * 2.2;
+        y += below * 0.3;
+        alpha = (0.42 + hit * 0.45) * (1.0 - smoothstep(0.0, 0.3, below));
       }
     }
 
     vec2 pos = vec2(x, y);
-    // The pointer parts the dots.
     vec2 d = pos - uMouse;
-    float r = 0.22;
     float len = length(d);
-    if (len < r) pos += normalize(d + 0.0001) * (r - len) * 0.9;
+    if (len < 0.24) pos += normalize(d + 0.0001) * (0.24 - len) * 0.9;
 
-    vAlpha = alpha * smoothstep(1.15, 0.95, y);          // fade in at the top
+    vAlpha = alpha * smoothstep(uTop + 0.02, uTop - 0.12, y);
     vPass = pass * step(y, uSieve);
     gl_Position = vec4(pos.x / uAspect, pos.y, 0.0, 1.0);
-    gl_PointSize = aSize * uDpr * (1.0 + vPass * 0.9);
+    gl_PointSize = aSize * uDpr * (1.0 + vPass * 0.8);
   }
 `;
 
@@ -66,18 +75,15 @@ const FRAG = /* glsl */ `
   precision mediump float;
   varying float vAlpha;
   varying float vPass;
-  uniform vec3 uGrey;
-  uniform vec3 uTeal;
+  uniform vec3 uGrey, uMint;
   void main() {
-    vec2 c = gl_PointCoord - 0.5;
-    float d = length(c);
+    float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
-    float edge = smoothstep(0.5, 0.2, d);
-    gl_FragColor = vec4(mix(uGrey, uTeal, vPass), vAlpha * edge);
+    gl_FragColor = vec4(mix(uGrey, uMint, vPass), vAlpha * smoothstep(0.5, 0.15, d));
   }
 `;
 
-export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { count?: number; sieve?: number; centerX?: number }) {
+export function SiftField({ count = 2600, top = 0.8, sieve = 0.05, bottom = -0.75, width = 1.4, span = 0, pass = 0.075 }: FieldProps) {
   const host = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,7 +94,7 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
     try {
       renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'low-power' });
     } catch {
-      return; // no WebGL: the hero still reads fine without the field
+      return; // no WebGL: the page reads fine without the field
     }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     renderer.setPixelRatio(dpr);
@@ -99,33 +105,31 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
     const geo = new THREE.BufferGeometry();
     const seeds = new Float32Array(count * 4);
     const sizes = new Float32Array(count);
-    const near = new Float32Array(count);
-    // Deterministic, so every visitor sees the same field.
-    let s = 1234567;
+    let s = 1234567; // deterministic: every visitor sees the same field
     const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
     for (let i = 0; i < count; i++) {
       seeds[i * 4] = rand() * 2 - 1;
-      seeds[i * 4 + 1] = 0.035 + rand() * 0.05;
-      seeds[i * 4 + 2] = rand() < 0.07 ? 1 : 0; // about 1 in 14 is worth talking to
+      seeds[i * 4 + 1] = 0.05 + rand() * 0.07;
+      seeds[i * 4 + 2] = rand() < pass ? 1 : 0;
       seeds[i * 4 + 3] = rand();
       sizes[i] = 1.6 + rand() * 2.2;
-      near[i] = rand() < 0.45 ? 1 : 0;
     }
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
     geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 4));
     geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-    geo.setAttribute('aNear', new THREE.BufferAttribute(near, 1));
 
     const uniforms = {
       uTime: { value: reduced ? 30 : 0 },
       uAspect: { value: 1 },
       uMouse: { value: new THREE.Vector2(9, 9) },
+      uTop: { value: top },
       uSieve: { value: sieve },
-      uCenter: { value: new THREE.Vector2(0, 0) },
+      uBottom: { value: bottom },
+      uWidth: { value: width },
+      uSpan: { value: span },
       uDpr: { value: dpr },
-      uSpan: { value: 0.45 }, // half-width of the sieve
-      uGrey: { value: new THREE.Color('#a9b8bd') },
-      uTeal: { value: new THREE.Color('#7fd0c1') },
+      uGrey: { value: new THREE.Color('#9fb3b6') },
+      uMint: { value: new THREE.Color('#9ff2d6') },
     };
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -134,40 +138,40 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
     points.frustumCulled = false;
     scene.add(points);
 
-    // The sieve itself: a faint line of dots across the stream, shimmering a little.
-    const SIEVE_DOTS = 70;
-    const sieveGeo = new THREE.BufferGeometry();
-    const sx = new Float32Array(SIEVE_DOTS);
-    for (let i = 0; i < SIEVE_DOTS; i++) sx[i] = (i / (SIEVE_DOTS - 1)) * 2 - 1;
-    sieveGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SIEVE_DOTS * 3), 3));
-    sieveGeo.setAttribute('aX', new THREE.BufferAttribute(sx, 1));
-    const sieveMat = new THREE.ShaderMaterial({
-      uniforms,
-      transparent: true,
-      depthWrite: false,
-      vertexShader: /* glsl */ `
-        attribute float aX;
-        uniform float uTime; uniform float uAspect; uniform float uSieve; uniform vec2 uCenter; uniform float uDpr; uniform float uSpan;
-        varying float vAlpha;
-        void main() {
-          float x = uCenter.x + aX * uSpan;
-          float y = uSieve + sin(uTime * 1.3 + aX * 9.0) * 0.004;
-          vAlpha = 0.5 * (1.0 - smoothstep(0.55, 1.0, abs(aX))) * (0.75 + 0.25 * sin(uTime * 2.0 + aX * 23.0));
-          gl_Position = vec4(x / uAspect, y, 0.0, 1.0);
-          gl_PointSize = 2.4 * uDpr;
-        }`,
-      fragmentShader: /* glsl */ `
-        precision mediump float;
-        varying float vAlpha;
-        uniform vec3 uTeal;
-        void main() {
-          if (length(gl_PointCoord - 0.5) > 0.5) discard;
-          gl_FragColor = vec4(uTeal, vAlpha);
-        }`,
-    });
-    const sieveDots = new THREE.Points(sieveGeo, sieveMat);
-    sieveDots.frustumCulled = false;
-    scene.add(sieveDots);
+    // Optional visible sieve: a shimmering dotted line.
+    let sieveGeo: THREE.BufferGeometry | null = null;
+    let sieveMat: THREE.ShaderMaterial | null = null;
+    if (span > 0) {
+      const N = 70;
+      sieveGeo = new THREE.BufferGeometry();
+      const sx = new Float32Array(N);
+      for (let i = 0; i < N; i++) sx[i] = (i / (N - 1)) * 2 - 1;
+      sieveGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+      sieveGeo.setAttribute('aX', new THREE.BufferAttribute(sx, 1));
+      sieveMat = new THREE.ShaderMaterial({
+        uniforms, transparent: true, depthWrite: false,
+        vertexShader: /* glsl */ `
+          attribute float aX;
+          uniform float uTime, uAspect, uSieve, uDpr, uSpan;
+          varying float vAlpha;
+          void main() {
+            vAlpha = 0.55 * (1.0 - smoothstep(0.55, 1.0, abs(aX))) * (0.75 + 0.25 * sin(uTime * 2.0 + aX * 23.0));
+            gl_Position = vec4(aX * uSpan / uAspect, uSieve + sin(uTime * 1.3 + aX * 9.0) * 0.004, 0.0, 1.0);
+            gl_PointSize = 2.4 * uDpr;
+          }`,
+        fragmentShader: /* glsl */ `
+          precision mediump float;
+          varying float vAlpha;
+          uniform vec3 uMint;
+          void main() {
+            if (length(gl_PointCoord - 0.5) > 0.5) discard;
+            gl_FragColor = vec4(uMint, vAlpha);
+          }`,
+      });
+      const line = new THREE.Points(sieveGeo, sieveMat);
+      line.frustumCulled = false;
+      scene.add(line);
+    }
 
     const resize = () => {
       const w = el.clientWidth;
@@ -175,10 +179,7 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
       renderer.setSize(w, h, false);
       renderer.domElement.style.width = `${w}px`;
       renderer.domElement.style.height = `${h}px`;
-      const aspect = w / Math.max(h, 1);
-      uniforms.uAspect.value = aspect;
-      // Narrow screens: the stream runs down the middle.
-      uniforms.uCenter.value.set(w < 820 ? 0 : centerX * aspect, 0);
+      uniforms.uAspect.value = w / Math.max(h, 1);
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -187,12 +188,9 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
     const target = new THREE.Vector2(9, 9);
     const onMove = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
-      const aspect = uniforms.uAspect.value;
-      target.set(((e.clientX - r.left) / r.width * 2 - 1) * aspect, -((e.clientY - r.top) / r.height * 2 - 1));
+      target.set(((e.clientX - r.left) / r.width * 2 - 1) * uniforms.uAspect.value, -((e.clientY - r.top) / r.height * 2 - 1));
     };
-    const onLeave = () => target.set(9, 9);
     window.addEventListener('pointermove', onMove, { passive: true });
-    el.addEventListener('pointerleave', onLeave);
 
     let raf = 0;
     let visible = true;
@@ -204,7 +202,6 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
       if (!visible || document.hidden) return;
       const dt = Math.min(clock.getDelta(), 0.05);
       if (!reduced) uniforms.uTime.value += dt;
-      // Ease the pointer in, so the dots part smoothly rather than jump.
       uniforms.uMouse.value.lerp(target, 1 - Math.pow(0.001, dt));
       renderer.render(scene, camera);
     };
@@ -216,15 +213,14 @@ export function SiftField({ count = 4200, sieve = -0.08, centerX = 0.52 }: { cou
       ro.disconnect();
       io.disconnect();
       window.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
       geo.dispose();
       mat.dispose();
-      sieveGeo.dispose();
-      sieveMat.dispose();
+      sieveGeo?.dispose();
+      sieveMat?.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [count, sieve, centerX]);
+  }, [count, top, sieve, bottom, width, span, pass]);
 
   return <div className="l-field" ref={host} aria-hidden />;
 }
