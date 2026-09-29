@@ -13,16 +13,13 @@
 .err { color: var(--bad); }
 
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
-.tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 12px; color: var(--muted); }
+.tabs { gap: 20px; }
+.tabs button { text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 0; color: var(--muted); }
 .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
-.tabs .count { font-size: 12px; background: var(--surface); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+.tabs .count { font-size: 12px; color: var(--muted); margin-left: 4px; }
 
 .toolbar { gap: 12px; }
 .toolbar .search { flex: 1; min-width: 220px; }
-select {
-  font: inherit; color: var(--text); background: var(--bg);
-  border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
-}
 .checkbox { font-weight: 400; cursor: pointer; margin: 0; }
 .checkbox input { width: auto; }
 
@@ -36,21 +33,19 @@ select {
 }
 .thead { font-size: 12px; color: var(--muted); padding: 0 12px 8px; border-bottom: 1px solid var(--border); }
 .account { border-bottom: 1px solid var(--border); padding: 10px 12px; }
-.account.open { background: var(--surface); }
+.account.open { border-bottom-color: var(--border-strong); }
 
-.priority {
-  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px;
-  font-weight: 700; background: var(--surface); border: 1px solid var(--border);
-}
-.priority.good { background: var(--good-bg); color: var(--good); border-color: transparent; }
-.priority.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
-.priority.bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+/* Priority: a plain number, coloured; the line under the row does the framing. */
+.priority { font-size: 22px; font-weight: 400; letter-spacing: -0.02em; }
+.priority.good { color: var(--good); }
+.priority.warn { color: var(--warn); }
+.priority.bad { color: var(--bad); }
 
 .company { display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; }
-.link-like { border: none; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; }
+.link-like { text-decoration: none; color: inherit; padding: 0; }
 .link-like:hover strong { text-decoration: underline; }
-.logo { width: 32px; height: 32px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--border); flex-shrink: 0; }
-.logo.placeholder { display: grid; place-items: center; font-weight: 600; background: var(--surface); }
+.logo { width: 28px; height: 28px; border-radius: 5px; object-fit: contain; flex-shrink: 0; }
+.logo.placeholder { display: grid; place-items: center; font-size: 17px; font-weight: 500; color: var(--muted); }
 
 .num { font-weight: 600; }
 .num.good { color: var(--good); }
@@ -60,19 +55,19 @@ select {
 .why .block, .contact-cell .block { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .why .pill { margin-bottom: 2px; }
 .stale { color: var(--warn); }
-.actions { justify-content: flex-end; gap: 4px; }
-.small.btn, button.small { padding: 4px 8px; font-size: 12px; }
+.actions { justify-content: flex-end; gap: 14px; }
+button.small { font-size: 12.5px; }
 
 .details {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;
-  padding: 14px 0 4px 68px;
+  margin-top: 12px; padding: 14px 0 4px 68px; border-top: 1px dashed var(--border);
 }
 .details h2 { margin-bottom: 6px; }
 .details .note { grid-column: 1 / -1; }
 .plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .contact-line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .contact-line code { font-size: 12px; }
-.empty { padding: 24px; }
+.empty { padding: 20px 0; }
 .empty p { margin: 6px 0 0; }
 
 /* Narrow windows: stack each account as a card. */

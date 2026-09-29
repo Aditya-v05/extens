@@ -370,7 +370,7 @@ function Contacts({ result, ranking, windowId, lowFit }: { result: LookupResult;
   }
   const [best, ...rest] = contacts;
   return (
-    <section className="stack">
+    <section className="stack contacts">
       {result.contactsFallback && (
         <div className="notice small">No one matched your persona titles, so these are senior people instead.</div>
       )}

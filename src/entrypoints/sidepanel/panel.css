@@ -15,9 +15,10 @@
 /* Company header */
 .company { display: flex; align-items: flex-start; gap: 12px; }
 .company h1 { font-size: 21px; line-height: 1.2; margin-bottom: 2px; }
-.logo { width: 40px; height: 40px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--border); flex-shrink: 0; }
-.logo.placeholder { display: grid; place-items: center; font-weight: 600; color: var(--muted); background: var(--surface); }
-button.saved { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.logo { width: 36px; height: 36px; border-radius: 6px; object-fit: contain; flex-shrink: 0; }
+.logo.placeholder { display: grid; place-items: center; font-size: 20px; font-weight: 500; color: var(--muted); }
+button.saved { color: var(--muted); text-decoration-color: transparent; }
+button.saved:hover { color: var(--text); }
 
 /* Fit: the one loud element. A large, light number and the requirement strip under it. */
 .fit { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
@@ -48,8 +49,11 @@ button.saved { background: var(--accent-soft); border-color: transparent; color:
 
 .persona { margin-top: -6px; }
 
-.contact { display: flex; flex-direction: column; gap: 10px; }
-.contact.featured { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+/* Contacts: rows between hairlines; the best one sits under an accent line. */
+.contact { display: flex; flex-direction: column; gap: 8px; padding: 14px 0 2px; }
+.contact.featured { border-top: 2px solid var(--accent); }
+.contact > button { align-self: flex-start; }
+.contacts h2 { margin-top: 6px; }
 .contact .email code {
   font: 500 13px/1.4 'Schibsted Grotesk Variable', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }

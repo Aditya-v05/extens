@@ -50,70 +50,66 @@ h2 { font-size: 13px; font-weight: 600; color: var(--text); }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .block { display: block; }
 
-/* Quiet container: hairline, no shadow. */
+/* No boxes anywhere: structure comes from hairlines and space. */
 .card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 16px 0 0;
 }
 
+/* Buttons are text actions on a line, not boxes. */
 button, .btn {
   font: inherit;
   font-weight: 500;
-  border-radius: 6px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg);
-  color: var(--text);
-  padding: 6px 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 2px 0;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.15s, color 0.15s;
 }
-button:hover:not(:disabled) { border-color: var(--text); }
-button:disabled { opacity: 0.5; cursor: default; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
-button.primary:hover:not(:disabled) { background: #264d59; border-color: #264d59; }
-button.link {
-  border: none; background: none; padding: 0; color: var(--accent); text-align: left;
-  text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent); text-underline-offset: 3px;
-}
-button.link:hover { text-decoration-color: var(--accent); }
-.stack > button.link { align-self: flex-start; }
-button.ghost { border-color: transparent; background: transparent; color: var(--muted); padding: 4px 8px; }
-button.ghost:hover:not(:disabled) { color: var(--text); border-color: transparent; background: var(--surface); }
+button:hover:not(:disabled) { text-decoration-color: currentColor; }
+button:disabled { color: var(--muted); text-decoration-color: transparent; cursor: default; }
+/* The main action on a view: heavier line, same shape. */
+button.primary { font-weight: 600; text-decoration-thickness: 2px; text-decoration-color: currentColor; }
+button.link { text-align: left; }
+.stack > button.link, .stack > button.primary { align-self: flex-start; }
+/* Secondary actions: stone, underline only on hover. */
+button.ghost { color: var(--muted); text-decoration-color: transparent; }
+button.ghost:hover:not(:disabled) { color: var(--text); text-decoration-color: currentColor; }
 
+/* Fields: a single bottom line. */
 input, textarea, select {
   font: inherit;
   color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
+  padding: 6px 0;
+  transition: border-color 0.15s;
 }
 input, textarea { width: 100%; }
-select { padding: 6px 8px; }
+select { padding: 4px 18px 4px 0; cursor: pointer; }
+input:hover, textarea:hover, select:hover { border-bottom-color: var(--muted); }
+input:focus, textarea:focus, select:focus { outline: none; border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
 input::placeholder, textarea::placeholder { color: #a5a8ac; }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px;
-}
-textarea { resize: vertical; min-height: 60px; }
-label { display: block; font-weight: 500; margin-bottom: 4px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+textarea { resize: vertical; min-height: 44px; line-height: 1.5; }
+label { display: block; font-weight: 500; margin-bottom: 2px; }
 
-/* Status tag: text colour only on a pale tint. */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-}
-.pill.good { background: var(--good-bg); color: var(--good); }
-.pill.warn { background: var(--warn-bg); color: var(--warn); }
-.pill.bad { background: var(--bad-bg); color: var(--bad); }
+/* Status words: colour only, no tag shape. */
+.pill { font-size: 12.5px; font-weight: 600; color: var(--muted); background: none; padding: 0; }
+.pill.good { color: var(--good); }
+.pill.warn { color: var(--warn); }
+.pill.bad { color: var(--bad); }
 
 .skeleton {
   background: linear-gradient(90deg, var(--surface), var(--border), var(--surface));
@@ -125,13 +121,8 @@ label { display: block; font-weight: 500; margin-bottom: 4px; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } * { transition: none !important; } }
 
-.notice {
-  border-radius: 6px;
-  padding: 10px 12px;
-  background: var(--warn-bg);
-  color: #7d5b22;
-}
-.notice.error { background: var(--bad-bg); color: #8f3f2e; }
+.notice { border-left: 2px solid var(--warn); padding: 2px 0 2px 12px; color: #7d5b22; }
+.notice.error { border-left-color: var(--bad); color: #8f3f2e; }
 
 /* Check-state glyphs (see Icon.tsx). */
 .state-met { color: var(--good); }
@@ -146,3 +137,4 @@ label { display: block; font-weight: 500; margin-bottom: 4px; }
 .credit-bar.warn > div { background: var(--warn); }
 .credit-bar.bad > div { background: var(--bad); }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width: auto; }
+code { font: 500 1em/1.4 'Schibsted Grotesk Variable', sans-serif; }

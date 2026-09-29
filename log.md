@@ -4,6 +4,24 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Lines only, no boxes
+
+> "lets not have boxes at all just use lines"
+
+- **Buttons** are underlined text actions. The main action on a view gets a heavier 2px underline; secondary actions are stone grey and underline on hover.
+- **Fields** (inputs, textareas, selects) have a single bottom line that turns fjord blue on focus.
+- **Sections** (settings, `.card`) are separated by a top hairline and space, with no border box.
+- **Side panel contacts** are rows between hairlines, and the best contact sits under a 2px accent line. The Reveal email action is left-aligned text instead of a full-width button.
+- **Tags** ("Warm", "verified", "Partial fit") are coloured words, no tag shape. Notices use a coloured left line.
+- **My Accounts:**
+  - Priority is a plain coloured number (was a tinted square).
+  - An expanded row is marked by a dashed divider (was a grey background).
+  - Tabs are underlined words; the logo placeholder is a plain letter.
+- **Emails** use the normal typeface instead of monospace.
+- **Smoke test:** a new check fails if any element on the panel, My Accounts or Settings has a border on all four sides (checkboxes excepted). 11/11 pass.
+
+---
+
 ## 2026-09-29 — Fit score follows your requirements; white Scandinavian UI
 
 First feedback from using the real extension:

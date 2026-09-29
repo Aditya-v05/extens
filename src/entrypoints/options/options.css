@@ -6,7 +6,7 @@
 }
 .options header h1 { font-size: 24px; margin-bottom: 4px; }
 .options header p { margin: 0; }
-.options .card { padding: 20px; background: var(--bg); }
+
 
 .hint { margin-top: 4px; }
 .ok { color: var(--good); margin-top: 4px; }
@@ -21,4 +21,5 @@
 .checkbox input { width: auto; }
 
 .options h2 { font-size: 16px; }
-.options .card { padding: 24px; }
+.options .card { padding-top: 24px; }
+.options { gap: 28px; }

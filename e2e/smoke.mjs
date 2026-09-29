@@ -86,6 +86,19 @@ await opts.waitForSelector('text=Apollo credits');
 await opts.screenshot({ path: `${OUT}/settings.png`, fullPage: true });
 
 check(await panel.locator('text=Why now').count() > 0, 'side panel renders a lookup');
+// "No boxes, only lines": nothing may have a border on all four sides (checkboxes excepted).
+const boxed = async (pg) => pg.evaluate(() =>
+  [...document.querySelectorAll('body *')]
+    .filter((el) => el.getClientRects().length && !(el instanceof HTMLInputElement && el.type === 'checkbox'))
+    .filter((el) => {
+      const cs = getComputedStyle(el);
+      return ['Top', 'Right', 'Bottom', 'Left'].every((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== 'none');
+    })
+    .map((el) => `${el.tagName.toLowerCase()}.${el.className}`));
+for (const [name, pg] of [['panel', panel], ['My Accounts', page], ['settings', opts]]) {
+  const found = await boxed(pg);
+  check(found.length === 0, `no boxes on ${name}${found.length ? `: ${found.slice(0, 5).join(', ')}` : ''}`);
+}
 check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join('; ')}` : ''}`);
 console.log(`screenshots: ${OUT}`);
 await ctx.close();
