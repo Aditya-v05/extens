@@ -38,7 +38,13 @@ export const browser = {
     openOptionsPage: () => {},
     getURL: (p: string) => p,
   },
-  tabs: { create: async () => ({}), query: async () => [] },
+  tabs: {
+    create: async () => ({}),
+    query: async () => [],
+    onActivated: { addListener: () => {}, removeListener: () => {} },
+    onUpdated: { addListener: () => {}, removeListener: () => {} },
+  },
+  permissions: { request: async () => false },
   windows: { getCurrent: async () => ({ id: 1 }) },
 } as any;
 

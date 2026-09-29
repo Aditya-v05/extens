@@ -6,7 +6,7 @@ import * as jev from '@/lib/jev';
 import type { KeyTest, Message } from '@/lib/messages';
 import { refreshBalance, revealContacts, runDiscover, runLookup, runProfileLookup } from '@/lib/pipeline';
 import { domainFromUrl, linkedinProfile } from '@/lib/resolver';
-import { setView } from '@/lib/storage';
+import { setView, setViewTab } from '@/lib/storage';
 
 export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(({ reason }) => {
@@ -15,14 +15,9 @@ export default defineBackground(() => {
 
   // Clicking the icon grants activeTab, so tab.url is readable here without the "tabs" permission.
   browser.action.onClicked.addListener((tab) => {
-    const windowId = tab.windowId;
     // Must be called synchronously inside the user gesture.
-    browser.sidePanel.open({ windowId });
-    const domain = domainFromUrl(tab.url);
-    const profile = domain ? null : linkedinProfile(tab.url);
-    if (domain) runLookup(windowId, domain, { tabId: tab.id });
-    else if (profile) runProfileLookup(windowId, profile);
-    else setView(windowId, { status: 'not_company', url: tab.url ?? null });
+    browser.sidePanel.open({ windowId: tab.windowId });
+    siftTab(tab);
   });
 
   browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
@@ -37,6 +32,12 @@ export default defineBackground(() => {
               ? runProfileLookup(msg.windowId, msg.profileUrl, { force: msg.force, allowOverBudget: msg.allowOverBudget })
               : runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget, tabId: tab?.id }),
           );
+        sendResponse({ ok: true });
+        return false;
+      case 'siftTab':
+        // "Sift this page" in the panel, after the user allowed the optional tabs permission. Without the
+        // icon's one-tab grant the site itself can't be read, so its website signals show as unavailable.
+        browser.tabs.query({ active: true, windowId: msg.windowId }).then(([tab]) => tab && siftTab(tab));
         sendResponse({ ok: true });
         return false;
       case 'refreshAccount':
@@ -66,6 +67,16 @@ export default defineBackground(() => {
     }
   });
 });
+
+/** Look up whatever the tab is showing: a company site, a LinkedIn profile, or neither. */
+function siftTab(tab: { windowId: number; id?: number; url?: string }) {
+  if (tab.id !== undefined) setViewTab(tab.windowId, tab.id);
+  const domain = domainFromUrl(tab.url);
+  const profile = domain ? null : linkedinProfile(tab.url);
+  if (domain) runLookup(tab.windowId, domain, { tabId: tab.id });
+  else if (profile) runProfileLookup(tab.windowId, profile);
+  else setView(tab.windowId, { status: 'not_company', url: tab.url ?? null });
+}
 
 async function test(fn: () => Promise<boolean>, failMessage: string): Promise<KeyTest> {
   try {

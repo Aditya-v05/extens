@@ -140,6 +140,7 @@ await panel.evaluate(async () => {
 });
 await panel.reload();
 check(await panel.locator("text=Open a person's profile").count() === 1, 'LinkedIn pages that are not profiles explain what to open');
+check(await panel.locator('button', { hasText: 'Sift this page' }).count() === 1, 'pages Sift cannot use offer Sift this page');
 // Back to a normal lookup for the checks that follow.
 await panel.evaluate(async (result) => {
   const w = await chrome.windows.getCurrent();
@@ -147,6 +148,24 @@ await panel.evaluate(async (result) => {
 }, results['gorgias.com']);
 await panel.reload();
 await panel.waitForSelector('.score');
+// Switching tabs: the result was sifted from another tab (the accounts page), so the panel offers to sift this one.
+const tabOf = async (pg) => pg.evaluate(async () => (await chrome.tabs.getCurrent()).id);
+const otherTab = await tabOf(page);
+const panelTab = await tabOf(panel);
+const setViewTab = (tabId) => panel.evaluate(async (tabId) => {
+  const w = await chrome.windows.getCurrent();
+  await chrome.storage.session.set({ [`viewTab_${w.id}`]: { tabId, at: Date.now() } });
+}, tabId);
+await setViewTab(otherTab);
+await panel.bringToFront();
+await panel.waitForTimeout(300);
+check(await panel.locator('.switched.changed').isVisible() && (await panel.locator('.switched').innerText()).includes('Still showing gorgias.com'),
+  'after a tab switch the panel says so and offers Sift this page');
+await panel.screenshot({ path: `${OUT}/panel-switched.png` });
+await setViewTab(panelTab);
+await panel.waitForTimeout(300);
+check(await panel.locator('.switched.changed').count() === 0 && (await panel.locator('.switched').innerText()).includes('Showing gorgias.com'),
+  'on the result\'s own tab the line is calm but Sift this page is still there');
 const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
 check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
 const text = await panel.evaluate(() => document.body.innerText);

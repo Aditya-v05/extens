@@ -4,6 +4,356 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Shipped: landing redesign and Sift this page are live
+
+> "beautiful lets push and deploy"
+
+- **What:** `site-redesign` squash-merged into `main` as one commit and pushed. Vercel deploys production (https://sift-through.vercel.app) from `main`. It carries everything in the entries below: the slat-wall hero ("Sift through companies. Talk to the right ones."), the Remotion demo video with a made-up email, the maker strip, and in the extension, the always-visible **Sift this page** button with its optional `tabs` permission.
+- **Why a squash:** one branch commit briefly showed a real person's email in the demo video. Squashing keeps that commit out of `main`'s history. It still exists on the `site-redesign` branch on GitHub.
+- **Verified on `main` before pushing:**
+  - compile, 123 tests, `wxt build`, smoke (31) and the site build all pass;
+  - no `.mov`, clean source or keys staged;
+  - the production deploy and the live page are checked after the push (see the next lines of this entry).
+
+---
+
+## 2026-09-30 — Landing video: a made-up email instead of a blur
+
+> "instead of blurring can we just use like a fake email like a made up one"
+
+- **What:** the revealed address in the demo now reads `dan@usepylon.example`. `.example` is reserved (RFC 2606) and can never belong to anyone. It is drawn in Remotion over the panel in its own font (Schibsted Grotesk), colour and background, inside the camera's coordinate space, so it zooms and pans with the page. It is on screen from 11.7 s to 14.4 s of the recording.
+- **Safety net:** the blur in `clean.mp4` stays under the text and now starts at 11.7 s, right at the reveal, so "Revealing…" is no longer blurred.
+- **Verified:**
+  - every frame from 11.4 s to 14.4 s (in recording time) in both cuts goes straight from "Revealing…" to the made-up address;
+  - no frame shows the real one, including during the crossfade to the Save clip;
+  - the patch matches the panel (#fcfcfc, feathered edge);
+  - tests pass.
+
+---
+
+## 2026-09-30 — Landing video edited in Remotion (branch `site-redesign`)
+
+> "no ant use like remotion ??"
+
+- **What:** the demo is now an edited Remotion video (`video/`) instead of a plain trim of the recording. It runs about 18 s:
+  1. an intro card ("Sift, on a real site.");
+  2. the icon click, with the camera easing in on the toolbar;
+  3. the Pylon result, with the camera following the panel through the score, why now and the best contact;
+  4. Save;
+  5. a closing card ("Sift through companies. Talk to the right ones.").
+
+  Each moment gets a caption (a mono label and a serif line) in its own band under the picture, so captions never sit on the page's text.
+- **Two compositions:** `SiftDemo` is 1600×1000 for desktop; `SiftDemoVertical` is 720×1280 and framed on the panel for phones. They are re-encoded for the web to 1.8 MB and 1.1 MB.
+- **Privacy fix:** checking every frame of the reveal showed the email appears at about 11.77 s, while the earlier blur only started at 11.8 s. So the plain cut pushed in the previous commit showed the email unblurred for about one frame. The blur now starts at 11.3 s (during "Revealing…"), and every frame of 11.0–14.4 s is blurred in both new cuts.
+- **Kept local:** the clean source (`video/public/clean.mp4`), renders (`video/out/`) and `node_modules` are git-ignored. `video/README.md` documents the source prep, the timeline and the render and re-encode commands.
+- **Verified:**
+  - stills at each moment in both sizes;
+  - frame-by-frame check of the reveal;
+  - the site plays each cut at 1440 and 390 px;
+  - no page errors;
+  - compile, 123 tests and `wxt build` pass.
+
+---
+
+## 2026-09-30 — Landing: real screen recording replaces the scripted demo (branch `site-redesign`)
+
+> "can we use this for the video instead like edit or do changes on these maybe this might look better" (a 44 s screen recording of Sift on usepylon.com)
+
+- **The edit** (15.5 s loop, no audio, made with ffmpeg):
+  1. 1.0–3.9 s: the click on the Sift icon and the panel loading;
+  2. a short fade across Chrome going fullscreen;
+  3. 4.3–14.0 s: Pylon at 82% Strong fit, scrolling through why now, and revealing the best contact's email;
+  4. 22.0–25.6 s: back at the top, Save becomes Saved.
+
+  The Settings part (28–43 s) was left out.
+- **Privacy in the edit:**
+  - the revealed email of a real person (Pylon's Head of Customer Success) is blurred for as long as it is on screen;
+  - Chrome's "Relaunch to update", "Ask Gemini" and a personal bookmark are painted over;
+  - the macOS menu bar is cropped off;
+  - the API keys never appear (Settings was cut, and they were masked anyway);
+  - the raw `.mov` stays local: `*.mov` is added to `.gitignore`.
+- **Two cuts:**
+  - `site/public/demo.mp4`: the full window, 1600×1000, 815 KB;
+  - `site/public/demo-m.mp4`: cropped to the panel for phones, 540×992, 519 KB;
+  - each has a poster frame. The page picks one by screen width. It autoplays muted and loops inline; with reduced motion it shows the poster with controls instead.
+- **Code:** `Demo.tsx` (the scripted demo) and its CSS are removed. The section now reads "A real lookup, recorded / One click on their homepage. *The answer beside it.*"
+- **Verified:**
+  - the video plays at 1440 and 390 px (readyState 4, playing);
+  - frames checked for the blur and the covered buttons;
+  - no page errors; reveals fire;
+  - 123 tests, `wxt build` and smoke pass.
+
+---
+
+## 2026-09-30 — Sift this page is always there
+
+> "no resift button ?" (screenshot: panel showing Fieldguide while the tab was on Pylon)
+
+- **Why it was missing:** the line only appeared once the panel knew which tab its result came from. A result made before the update, or from a typed domain or My Accounts, had no recorded tab, so the panel never offered the button.
+- **Fix:** every result now has a line above it, "Showing fieldguide.com", with **Sift this page**. When the active tab is no longer the result's own, the line changes to "This tab has changed. Still showing fieldguide.com." and gets stronger. Empty and not-a-company pages keep their own single button.
+- **Verified:**
+  - the smoke test checks both states and that there is only one button on not-a-company pages;
+  - 31 smoke checks, 123 tests and the build pass;
+  - screenshot `e2e/screenshots/panel-linear.png`.
+- **To try it:** reload the unpacked extension at chrome://extensions.
+
+---
+
+## 2026-09-30 — Landing: slat cards across the whole hero (branch `site-redesign`)
+
+> "we can have the cards all over actually and size the sift text in the cards a bit up" (their screenshot, on a shorter screen, had SIFT cut off at the bottom)
+
+- **Layout:** the slat wall now fills the entire hero behind the copy. Cards behind the headline, lede and button (an ellipse around the copy) and under the nav are dimmed so the text stays readable.
+- **SIFT sizing:** SIFT now takes the space between the copy and the bottom edge, up to 380 px tall, so it is always fully visible. It is large on tall screens and smaller on short ones instead of being cropped.
+- **Verified:**
+  - screenshots at 1440×900, 1528×750 (close to the user's screen) and 390 px;
+  - no overflow or page errors;
+  - every reveal fires;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
+## 2026-09-30 — Landing v7: SIFT in slats, new headline (branch `site-redesign`)
+
+> "let us remove the sifting part - lets add the large sift text down there - lets change the text to sift through the companies (work on it a bit)" and, with the MicroSlats source pasted: "i want small cards like this but no animation needed we can maybe darken the cards to spell out sift below and they flicker randomly"
+
+- **Copy:**
+  - headline "Sift through companies. / *Talk to the right ones.*";
+  - lede "Open any company's site and Sift tells you if it fits, why now, and who to reach. One click, on your own Apollo and Jev keys.";
+  - one Install Sift button, with "Free and open source" under it;
+  - page title and share description updated to match.
+- **SIFT in slats** (`site/SlatWord.tsx`, replaces the evidence canvas):
+  - a full-width wall of small rounded cards fills the bottom of the first screen;
+  - the cards inside the letters of SIFT are darkened, so the word reads like holes punched in a sieve;
+  - random cards flicker, and about 1 in 8 flickers mint;
+  - no waves and no cursor effects;
+  - it is our own 2D-canvas take on the idea, no ogl and no copied code, redrawn about 16 times a second only while visible, and still under reduced motion;
+  - phones use smaller cards so the letters stay readable.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - every reveal fires on scroll; no overflow or page errors;
+  - `og.png` regenerated;
+  - compile, 123 tests, `wxt build` and smoke pass.
+
+---
+
+## 2026-09-30 — Landing v6: centred hero with a living evidence canvas (branch `site-redesign`)
+
+> "no lets not use the right left design its too ai like can we think of something different". Then a pasted direction: one centred idea with very little copy, then show Sift doing it ("noise comes in, one answer comes out"). Mint should mean signal only. Kill the galaxy, the ghost wordmark and the second CTA.
+
+- **Copy:**
+  - "Know who's worth / *talking to.*";
+  - "Qualify any company. Find the signal. Reach the right person.";
+  - one CTA, **Install Sift** (cream), with "Bring your own Apollo + Jev keys" in small mono.
+- **Evidence canvas** (`site/Evidence.tsx`), about 1100 px wide under the copy. It plays a 12.8 s loop:
+  1. six pieces of evidence about Acme appear in grey (status: "reading acme.example…");
+  2. the three that don't matter (the Series B at 48%, a blog offsite recap, a brand-designer opening) blur away ("sifting…");
+  3. the three that do (hiring 86%, the pricing-page quote 71%, headcount 62%) turn mint and draw in, and thin mint lines join them;
+  4. Ingrid Holm, VP Customer Experience, 92 (fit 90, timing 74) appears ("signal.").
+- **Receipts:** hovering or focusing any piece shows its source. The loop holds while you hover, or while the canvas is off screen or the tab is hidden.
+- **Other behaviour:** reduced motion shows the final answer at once. On phones the pieces stack and connect vertically. Every number comes from `demo-data.ts`.
+- **Colour:** mint now means signal. The Install buttons (nav, hero, closing) are cream; the swirl and three.js are gone from the hero (fx.tsx now holds only the blinds and slats).
+- **Answers section:** labelled "How Sift got there".
+- **Verified:**
+  - screenshots of the sequence (reading, sifting, signal, hover receipt) at 1440 px and 390 px;
+  - every reveal fires on scroll; no overflow or page errors;
+  - `og.png` regenerated from the final frame;
+  - compile, 123 tests, `wxt build` and smoke pass.
+
+---
+
+## 2026-09-30 — Landing v5: product-first hero (branch `site-redesign`)
+
+> Pasted critique: the hero had too many competing focal points (galaxy, ghost wordmark, long grey paragraph, three CTAs); "Don't sell mystery in space. Sell clarity from noise." Recommended: copy left, a real product result right, sparse dots, no ghost wordmark, one primary CTA, Privacy out of the top nav. The user: "i think we might have to use the best".
+
+- **Left:**
+  - "Know who's worth talking to.";
+  - a shorter lede ("…explains why it matters now, and surfaces the best person to contact.");
+  - **Install Sift** (primary) and **See the demo** (scrolls to `#demo`);
+  - one quiet line: "Free and open source. Runs on your own Apollo and Jev keys, one click in your browser."
+- **Right:** a condensed result card for Acme: fit 90, why now (Timing 74, with hiring 86%, moving upmarket 71%, headcount 62%), and Talk to Ingrid Holm, VP Customer Experience, 92. Every number is read from `demo-data.ts`, so it matches the real panel in the demo below. Rows arrive in the order Sift works.
+- **Swirl:** now a sparse ring (1,700 dots, down from 3,400; 900 on phones), tilted face-on so it frames the card as the thing it feeds.
+- **Removed:** the ghost "SIFT" wordmark, the selection point, and Privacy from the top nav (it stays in the footer).
+- **Fixes:**
+  - the web stub gained `tabs.onActivated/onUpdated` and `permissions.request`, because the demo renders the real panel, which now listens for tab switches;
+  - the avatar initials had inherited the job-title style.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - every reveal fires on scroll;
+  - no overflow or page errors; reduced motion OK;
+  - `og.png` regenerated (headline and card);
+  - compile, 123 tests, `wxt build` and smoke pass.
+- **Note:** the round widget at the right edge of the user's screenshots comes from a browser extension on their machine, not from the site.
+
+---
+
+## 2026-09-30 — Sift this page: re-sift after switching tabs
+
+> "we need a refresh button like once i switch to different site with the panel open i need to have a button the re-sifts if it doesnt"
+
+- **What:**
+  - when the active tab is no longer the one the panel's result came from (you switched tabs, or that tab loaded another page), a line appears under the credit bar: "This tab has changed. Still showing gorgias.com." with **Sift this page**;
+  - the same button is on the empty, not-a-company and LinkedIn-feed states.
+- **Why a permission:**
+  - Chrome only gives an extension a tab's address after its icon or shortcut is used, and a click inside the side panel doesn't count;
+  - so the button asks once for the optional `tabs` permission, inside the click, then reads the active tab's address only at that moment;
+  - it is not requested at install, and switching tabs only compares tab ids, which need no permission;
+  - if you decline, the panel says to use the icon or Alt+Shift+S.
+- **Limit:** lookups started from the button can't scan the website (that needs the icon's grant), so website signals show as unavailable for uncached companies. Apollo data, fit, hiring, headcount, funding and contacts all work.
+- **How:**
+  - the background records the source tab on every sift (`setViewTab`);
+  - `useTabSwitched` in `src/components/SiftThisPage.tsx` compares it with the active tab;
+  - a new `siftTab` message reuses the icon-click path (`siftTab()` in background);
+  - PRIVACY, README, SPEC, the store listing and the landing privacy line are updated.
+- **Verified:**
+  - compile and 123 tests pass;
+  - `wxt build`: the manifest lists `tabs` only under `optional_permissions`;
+  - smoke now has 30 checks: the bar appears when the result's tab isn't the active one, disappears when it is, and "Sift this page" shows on pages Sift can't use;
+  - not verified: the Chrome permission prompt itself (headless Chromium can't show it). Worth one manual try: click Sift on a site, switch tabs, press Sift this page, allow.
+
+---
+
+## 2026-09-30 — Landing: wordmark behind the headline (branch `site-redesign`)
+
+> "can we have the sift word below the swirl like behind the hero text - know who's worth talking part"
+
+- **What changed:** the outline "SIFT" moved out of the vortex into the hero copy. It is centred on the headline and sits behind it (z-index -1 inside the copy). The swirl is now clear above it, and the letters' top edge just meets the swirl's lower rim.
+- **Verified:**
+  - screenshots at 1440 and 390 px (the text stays legible over the 16% stroke);
+  - no overflow or page errors;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
+## 2026-09-30 — Landing: portfolio and email in the maker strip (branch `site-redesign`)
+
+> "add my portfolio in the contact part and this along with my email"
+
+- **Maker strip:**
+  - now reads "Made by Aditya Venkatesan" (name from the portfolio);
+  - shows the email as a mono link;
+  - buttons: Portfolio (https://aditya-venkatesan-gtm.vercel.app/, mint, primary), Email me (mailto), GitHub.
+- **Footer:** "Report an issue" moved into the Project column.
+- **Verified:**
+  - screenshots of the strip at 1440 and 390 px;
+  - no overflow or page errors;
+  - compile and tests pass.
+
+---
+
+## 2026-09-30 — Landing v4.2: outline wordmark behind the swirl (branch `site-redesign`)
+
+> "can we incorporate this part into the hero section somehow i really like it" (the outline SIFT wordmark from v3)
+
+- **What changed:** the giant outline "SIFT" (1 px mint stroke at 16%) is back. It sits behind the vortex, centred on the selection point (the same `--vy` the canvas uses), so the particles sweep across the letters. The layers, back to front: wordmark, canvas, selection point. On phones it is 36vw wide.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - no overflow or page errors;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
+## 2026-09-30 — Landing v4.1: quieter hero, maker strip in the footer (branch `site-redesign`)
+
+> "i dont want those lines/callouts at all - and i am not sure about the center logo also itd be cool to know that i have created this so a contact part at the footer would be cool as well"
+
+- **Hero:**
+  - removed the two annotation lines;
+  - replaced the boxed app icon with a glowing selection point that slowly breathes, so the picture no longer looks pasted on;
+  - the swirl now has a clear hierarchy: faint loose dust, medium dots on the arms, and the few selected dots mint, about twice the size and fully bright, orbiting tight around the point;
+  - about 35% fewer particles (3,400 desktop, 1,500 mobile).
+- **Footer:** a "Made by" strip above the links with the GitHub avatar, handle, one line ("A GTM engineer building Sift in the open…"), and buttons to the GitHub profile and to open an issue. No email is published.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - no overflow or page errors;
+  - every reveal fires on a real wheel scroll (the old QA script jumped past the new strip);
+  - `og.png` regenerated;
+  - 123 tests, `wxt build` and smoke (28) pass.
+
+---
+
+## 2026-09-30 — Landing page v4: our own look (branch `site-redesign`, preview only)
+
+> "i like the style but it feels like we straight up ripped off we need to add our own twist … i dont necessarily want so much cursor action … we can have the 3js swirl as the main part not so small on the top … the text with the beautiful sift embed … bigger and more in the center"
+
+- **Hero is the swirl** (`site/fx.tsx`, replaces `SiftField.tsx`). Sifting as panning for gold:
+  - thousands of dots ride three spiral arms in towards the Sift mark;
+  - most flash and are flung back over the rim, and about 1 in 12 turns mint and settles into a ring around the mark;
+  - it is big and centred, with two hand-set notes ("every company you visit", "the few worth your time");
+  - the headline, lede and buttons sit under it; the chips, result pill, stats and outline wordmark are gone.
+- **No cursor effects anywhere.** The pictures move on their own.
+- **Meridian signatures removed and replaced with a sieve motif:**
+  - the framed card with dot corners → a full-bleed night hero;
+  - the glass pill nav → a full-width bar with a mint scroll-progress line;
+  - numbered chips → a sieve glyph, the question, and the score the card beside it shows (90, 74, 92, 88, matching the demo data);
+  - flat tinted blocks → slatted stages;
+  - tinted cost cards → a receipt with dotted leaders and "Sift's own fee: 0";
+  - the privacy band sits behind closed blinds (a shader), and the closing and footer are one night block over a rolling sea of slats instead of a giant wordmark.
+- **Shaders:** the React Bits components the user shared (GradientBlinds, MicroSlats) were ideas only. The blinds and slats are our own small three.js shaders: no `ogl` dependency, and no Commons Clause code in an MIT repo. All three share one lifecycle: they draw only while on screen, pause in hidden tabs and hold a still frame under reduced motion.
+- **Verified:**
+  - Playwright at 1440 and 390 px, screenshots reviewed (fixed the dark-on-dark closing headline, too-bright blinds light, a small mobile swirl, and note legibility over the arms);
+  - no overflow, no page errors, reveals fire, content visible under reduced motion, card hover lift -4 px;
+  - `og.png` regenerated;
+  - compile, 123 tests, `wxt build` and smoke (28) pass.
+
+---
+
+## 2026-09-30 — Landing page v3: centred funnel hero, Meridian-style sections (branch `site-redesign`, preview only)
+
+> "this part makes little sense - id like to have the hero section text alligned tpo thew center with the particle funekling in the middle - also it looks pretty bland and boring … the header and footer are lackluster https://meridian-ind.vercel.app/"
+
+- **Research (Playwright):** Meridian closely (framed deep-green hero card, dot-grid corners, floating glass pill nav, serif headings with mono labels, numbered sections, tinted cards, a giant cropped wordmark), plus Attio, Clay, Wispr, incident.io, Linear and Polar.
+- **Hero:**
+  - a framed dark card with dot-grid corners;
+  - example domains at the top fall into a centred funnel onto the Sift mark (`SiftField.tsx` rewritten). About 1 in 13 dots pass, turn mint and stream into a result pill: "Ingrid Holm, VP Customer Experience 92";
+  - centred copy in Instrument Serif, mono eyebrow, mint and glass buttons, a stats row (1 click, 4 answers, 0 servers, 2 credits) and an outline "SIFT" wordmark.
+- **Nav:** a floating glass pill (blur, border, depth) that tightens on scroll.
+- **Scroll story replaced.** The iframe story didn't read well. It is now four numbered answers (01 fit, 02 why now, 03 who to email, 04 LinkedIn), each beside a tinted stage holding the *real* panel component (`FitCard`, `WhyNowCard`, `ContactPicker`, `ProfileCard`, now exported from `App.tsx`; nothing else changed). The panel iframe files are removed.
+- **Also:**
+  - "After the click" as dark and light tiles;
+  - costs on tinted cards;
+  - privacy as a full-bleed night band;
+  - a dark closing card with the field;
+  - a new footer with three link columns (including the changelog) and a giant gradient "SIFT" wordmark.
+- **Fonts:** Instrument Serif and JetBrains Mono (self-hosted via fontsource).
+- **Verified:**
+  - Playwright QA: every reveal fires, the nav scrolled state works, no horizontal overflow at 390 px, content visible under reduced motion, card hover lift -4 px, no page errors;
+  - screenshots reviewed (fixed the footer wordmark letters colliding and the result pill width on mobile);
+  - `og.png` regenerated from the new hero;
+  - `npm run compile`, 123 tests, `wxt build`, and smoke (28 checks) pass.
+  - The no-slop-motion linter flags 10 soft shadows. They are kept on purpose: layered white cards on tinted stages and the glass nav are the Meridian depth the user asked for.
+
+---
+
+## 2026-09-30 — Landing page redesign (branch `site-redesign`, preview only)
+
+> "can we make the site atleast a bit better this is super bland lets give it some life … visit multiple yc company landing pages … u can use three js"
+
+- **Research (Playwright):** Resend, Raycast, Supabase, Loops and PostHog. Hero screenshots, whole-page strips, fonts, WebGL/video use, animation counts, and hero motion measured (idle vs. mouse: Raycast 17% / 12%, Resend 4% / 5%). All five have fixed navs.
+  - **Patterns taken:** one moving hero object beside a calm, huge headline (Resend, Raycast); the product big and early (Loops, Raycast); short punchy section heads; a story that ends on the opening promise.
+- **Hero: "sifting", in three.js** (`site/SiftField.tsx`).
+  - A polar-night field: dots fall onto a shimmering dotted sieve. Most flash and scatter; about 1 in 14 passes, turns the mark's teal, and funnels into a stream that lands where the Sift panel opens in the demo below.
+  - The pointer parts the dots.
+  - All motion runs in one vertex shader (61 fps even on headless software GL). It pauses off-screen and in hidden tabs, is static under reduced motion, and is loaded after first paint (page script 11 KB gz; three.js 133 KB gz separately).
+- **Copy:** "Know who's worth talking to." (the user's line), a solid Install button, and "See how it works".
+- **Structure:**
+  - the demo straddling night and day;
+  - **"One click. Four answers."**, a scroll story where the *real* side panel (an iframe, `site/panel.html`) follows the step being read: fit → why now (scrolls to the signals) → who (contacts, email revealed) → LinkedIn ("On this profile");
+  - "And after the click" (My Accounts, Discover, Who to look for);
+  - **costs** as big counting numbers (2 / 0 / 1 / 1);
+  - **privacy** as a diagram (your browser → Apollo and TypeSafe, no Sift server);
+  - FAQ;
+  - a dark closing band with the field again.
+- **Header:** dark over the hero, then light and blurred.
+- **Design note:** this departs on purpose from the extension's all-white, lines-only system (dark bands, a solid pill button) because the user asked for more life. The extension UI is unchanged.
+- **Verified in Playwright:** field renders and moves; header switches; each story step switches the embedded panel (scroll positions 0 / 397 / 537, profile card on LinkedIn); counts reach 2 / 0 / 1 / 1; no errors; no horizontal overflow at 390px; reduced motion is fully still. Slop linter clean on `site/`. Extension tests, tsc and build unaffected.
+- **Fixed during review:** the closing headline was dark-on-dark (base `h2` colour); "TypeSafe" overflowed its circle; the sieve sat behind the paragraph under the headline (narrowed and moved right); "to." widowed (balanced wrap).
+
+---
+
 ## 2026-09-30 — Site address is now sift-through.vercel.app
 
 - The Vercel project's production domain was renamed in the dashboard from `sift-rosy-omega.vercel.app` to **`sift-through.vercel.app`**. The old address now returns `DEPLOYMENT_NOT_FOUND`.

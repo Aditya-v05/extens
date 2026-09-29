@@ -17,5 +17,9 @@ export default defineConfig({
       'wxt/browser': here('./browser-stub.ts'),
     },
   },
-  build: { outDir: here('./dist'), emptyOutDir: true },
+  build: {
+    outDir: here('./dist'),
+    emptyOutDir: true,
+
+  },
 });

@@ -142,7 +142,8 @@ A tab in My Accounts (`src/entrypoints/accounts/Discover.tsx`, logic in `src/lib
 ```
 
 - **Stack:** WXT + React + TypeScript.
-- **Permissions:** `activeTab`, `scripting`, `sidePanel`, `storage`; host permissions only for `api.apollo.io` and `api.typesafe.ai`. No `<all_urls>`.
+- **Permissions:** `activeTab`, `scripting`, `sidePanel`, `storage`; host permissions only for `api.apollo.io` and `api.typesafe.ai`. No `<all_urls>`. Optional `tabs`, requested on the first press of **Sift this page**.
+- **Sift this page:** the background records which tab each sift came from (`viewTab_{windowId}` in session storage). The panel compares it with the active tab (tab ids need no permission; `tabs.onActivated`, and `tabs.onUpdated` status `loading` for that tab). When they differ it shows a line, "This tab has changed. Still showing X.", with the button, which is also on the empty and not-a-company states. Pressing it calls `permissions.request({permissions:['tabs']})` inside the click, then sends `siftTab`. The background reads the active tab's URL and runs the same path as an icon click (company, LinkedIn profile, or not a company). Without the icon's `activeTab` grant the website scan can't run, so those lookups show website signals as unavailable (cached results keep theirs).
 - **Modules** (kept separate so a self-hosted server version is easy later): `resolver`, `apollo`, `jev`, `rules`, `pipeline`, `cache`, `store`.
 
 ## 6. Pipeline

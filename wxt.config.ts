@@ -8,6 +8,8 @@ export default defineConfig({
     description:
       "Sift the company website you're on: ICP fit, why now, the best contact and their email. Bring your own Apollo + Jev keys.",
     permissions: ['activeTab', 'scripting', 'sidePanel', 'storage'],
+    // Asked for only when "Sift this page" is first pressed in the panel, to read that tab's address.
+    optional_permissions: ['tabs'],
     host_permissions: ['https://api.apollo.io/*', 'https://api.typesafe.ai/*'],
     action: { default_title: 'Sift this company' },
     // Same as clicking the icon (and grants the same one-tab access). Changeable at chrome://extensions/shortcuts.

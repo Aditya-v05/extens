@@ -5,6 +5,7 @@ import { ago, pct } from '@/components/format';
 import { ContactPicker, contactName } from '@/components/ContactPicker';
 import { RequirementStrip, StateIcon } from '@/components/Icon';
 import { checkState, checksSummary, upgradeFit } from '@/lib/mapping';
+import { SiftThisPage, useTabSwitched } from '@/components/SiftThisPage';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
@@ -45,9 +46,19 @@ export default function App() {
     if (windowId !== null) send({ type: 'lookup', windowId, domain, force, allowOverBudget, profileUrl });
   };
 
+  const shown = viewSubject(view);
+  const switched = useTabSwitched(windowId);
+
   return (
     <main className="panel">
       {view.status !== 'needs_setup' && <CreditBar credits={credits} onSettings={openSettings} />}
+      {/* Always there when a result is showing, so the tab you're on is one click away. */}
+      {shown && (
+        <div className={`switched row spread small ${switched ? 'changed' : ''}`}>
+          <span className="muted">{switched ? `This tab has changed. Still showing ${shown}.` : `Showing ${shown}`}</span>
+          <SiftThisPage windowId={windowId} className={switched ? 'link small primary' : 'link small'} />
+        </div>
+      )}
       <Body view={view} windowId={windowId} lookup={lookup} cost={cost} />
       <footer className="row spread small muted">
         <button className="link small" onClick={() => openAccounts()}>My Accounts</button>
@@ -57,6 +68,18 @@ export default function App() {
   );
 }
 
+/** What the panel is currently showing, in a few words; null when there is nothing to go stale. */
+function viewSubject(view: ViewState): string | null {
+  switch (view.status) {
+    case 'loading': case 'error': case 'done': case 'not_found': case 'over_budget':
+      return view.domain;
+    case 'profile_no_company':
+      return contactName(view.person);
+    default: // idle, setup and not-a-company pages carry their own Sift this page button
+      return null;
+  }
+}
+
 type Lookup = (domain: string, force?: boolean, allowOverBudget?: boolean, profileUrl?: string) => void;
 
 function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: number | null; lookup: Lookup; cost: number }) {
@@ -64,6 +87,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
     case 'idle':
       return (
         <Empty title="Open a company's website" body="Then click the Sift icon in your toolbar, or press Alt+Shift+S (⌥⇧S on a Mac).">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
@@ -79,10 +103,12 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
     case 'not_company':
       return isLinkedin(view.url) ? (
         <Empty title="Open a person's profile" body="On LinkedIn, Sift works on people's profiles: it finds who they are, their company's fit, and where they rank. Or type the company's domain.">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       ) : (
-        <Empty title="This isn't a company website" body="Open a company's site and click the icon again, or type a domain.">
+        <Empty title="This isn't a company website" body="Open a company's site and press Sift this page, or type a domain.">
+          <SiftThisPage windowId={windowId} />
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
@@ -231,7 +257,7 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
 }
 
 /** Opened from a LinkedIn profile: who this is, their email, and where they rank among the people found. */
-function ProfileCard({ result }: { result: LookupResult }) {
+export function ProfileCard({ result }: { result: LookupResult }) {
   const [copied, setCopied] = useState(false);
   const contacts = result.contacts ?? [];
   const i = contacts.findIndex((c) => c.apolloId === result.profile!.apolloId);
@@ -276,7 +302,7 @@ function ProfileCard({ result }: { result: LookupResult }) {
   );
 }
 
-function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
+export function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
   const tone = fit.score >= 70 ? 'good' : fit.score >= LOW_FIT ? 'warn' : 'bad';
   const word = fit.score >= 70 ? 'Strong fit' : fit.score >= LOW_FIT ? 'Partial fit' : 'Weak fit';
   const explained = fit.requirements !== undefined && fit.requirements !== null && fit.overall !== undefined;
@@ -305,7 +331,7 @@ function FitCard({ fit }: { fit: NonNullable<LookupResult['fit']> }) {
 const RELEVANT = 0.5;
 const signalKey = (s: Signal) => `${s.kind}:${s.siteType ?? ''}`;
 
-function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
+export function WhyNowCard({ whyNow }: { whyNow: WhyNow }) {
   const [showOthers, setShowOthers] = useState(false);
   const relevant = whyNow.signals.filter((s) => s.relevance >= RELEVANT);
   const others = whyNow.signals.filter((s) => s.relevance < RELEVANT);

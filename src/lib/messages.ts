@@ -4,6 +4,7 @@ import type { Keys, ViewState } from './types';
 
 export type Message =
   | { type: 'lookup'; windowId: number; domain: string; force?: boolean; allowOverBudget?: boolean; profileUrl?: string }
+  | { type: 'siftTab'; windowId: number }
   | { type: 'refreshBalance' }
   | { type: 'discover'; more?: boolean; fresh?: boolean; allowOverBudget?: boolean }
   | { type: 'reveal'; windowId: number | null; domain: string; personIds: string[] }
@@ -12,7 +13,7 @@ export type Message =
 
 export type KeyTest = { ok: boolean; message: string };
 
-export type Reply<M extends Message> = M extends { type: 'lookup' }
+export type Reply<M extends Message> = M extends { type: 'lookup' | 'siftTab' }
   ? { ok: true }
   : M extends { type: 'refreshBalance' }
     ? { ok: true }

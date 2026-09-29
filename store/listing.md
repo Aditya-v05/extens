@@ -36,6 +36,7 @@ Help a salesperson decide whether the company whose website they're on is worth 
 
 - **activeTab:** read the address of the tab when the user clicks the Sift icon, to know which company (or, on LinkedIn, which profile) to look up. No access to other tabs or history. LinkedIn page content is never read.
 - **scripting:** when the user clicks the icon, read the current page and the same site's public pricing, blog, changelog and security pages, to find evidence for "why now" signals. Can be turned off in Settings.
+- **tabs (optional):** requested only when the user presses "Sift this page" in the panel, to read the active tab's address at that moment and look it up without clicking the toolbar icon again. Not requested at install; never read in the background.
 - **sidePanel:** show results beside the page.
 - **storage:** keep the user's API keys, profile, cached results, saved accounts and credit count locally.
 - **Host permissions (api.apollo.io, api.typesafe.ai):** call the two APIs the user brings keys for. No other hosts.

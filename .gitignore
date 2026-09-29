@@ -7,3 +7,9 @@ node_modules
 e2e/screenshots
 site/dist
 .vercel
+
+# Raw screen recordings stay local
+*.mov
+video/public/clean.mp4
+video/out/
+video/node_modules/
