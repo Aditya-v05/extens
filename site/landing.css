@@ -118,7 +118,7 @@ main p { line-height: 1.6; }
 .l-btn.cream:hover { background: #fff; }
 
 /* SIFT in slats: the wall runs edge to edge along the bottom of the hero. */
-.l-slatword { position: relative; width: calc(100% + 48px); margin: 56px -24px 0; flex: 1 1 auto; min-height: 220px; max-height: 420px; animation: l-fade 1.4s var(--ease-out) 0.3s both; }
+.l-slatword { position: absolute; inset: 0; z-index: 0; animation: l-fade 1.4s var(--ease-out) 0.3s both; }
 .l-slatword canvas { display: block; }
 
 /* ---------- demo ---------- */
@@ -315,8 +315,7 @@ main p { line-height: 1.6; }
   .l-nav-in { gap: 12px; }
   .l-nav nav { display: none; }
   .l-pill { margin-left: auto; }
-  .l-hero { height: auto; min-height: 0; padding: 112px 16px 0; }
-  .l-slatword { width: calc(100% + 32px); margin: 48px -16px 0; flex: none; min-height: 0; height: 190px; }
+  .l-hero { height: auto; min-height: 0; padding: 112px 16px 250px; }
     .l-maker { grid-template-columns: auto 1fr; }
   .l-maker-links { grid-column: 1 / -1; }
   .l-site { display: none; }

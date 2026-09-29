@@ -4,6 +4,21 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing: slat cards across the whole hero (branch `site-redesign`)
+
+> "we can have the cards all over actually and size the sift text in the cards a bit up" (their screenshot, on a shorter screen, had SIFT cut off at the bottom)
+
+- **Layout:** the slat wall now fills the entire hero behind the copy. Cards behind the headline, lede and button (an ellipse around the copy) and under the nav are dimmed so the text stays readable.
+- **SIFT sizing:** SIFT now takes the space between the copy and the bottom edge, up to 380 px tall, so it is always fully visible. It is large on tall screens and smaller on short ones instead of being cropped.
+- **Verified:**
+  - screenshots at 1440×900, 1528×750 (close to the user's screen) and 390 px;
+  - no overflow or page errors;
+  - every reveal fires;
+  - `og.png` regenerated;
+  - tests pass.
+
+---
+
 ## 2026-09-30 — Landing v7: SIFT in slats, new headline (branch `site-redesign`)
 
 > "let us remove the sifting part - lets add the large sift text down there - lets change the text to sift through the companies (work on it a bit)" and, with the MicroSlats source pasted: "i want small cards like this but no animation needed we can maybe darken the cards to spell out sift below and they flicker randomly"

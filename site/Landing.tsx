@@ -103,9 +103,11 @@ function Nav() {
 // ---------- hero: the line, one button, and SIFT spelled in slats across the bottom ----------
 
 function Hero() {
+  const copy = useRef<HTMLDivElement>(null);
   return (
     <section className="l-hero">
-      <div className="l-hero-copy">
+      <SlatWord quiet={copy} />
+      <div className="l-hero-copy" ref={copy}>
         <h1>
           Sift through companies.<br /><em>Talk to the right ones.</em>
         </h1>
@@ -118,7 +120,6 @@ function Hero() {
         </div>
         <p className="l-fine">Free and open source</p>
       </div>
-      <SlatWord />
     </section>
   );
 }
