@@ -10,3 +10,6 @@ site/dist
 
 # Raw screen recordings stay local
 *.mov
+video/public/clean.mp4
+video/out/
+video/node_modules/

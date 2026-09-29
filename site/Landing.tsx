@@ -100,7 +100,7 @@ function Nav() {
   );
 }
 
-// ---------- demo: a real screen recording (usepylon.com), trimmed; the revealed email is blurred ----------
+// ---------- demo: a real screen recording (usepylon.com), edited in Remotion (video/); the revealed email is blurred ----------
 
 function DemoVideo() {
   // Autoplay only when motion is welcome; otherwise show the poster with controls.
@@ -112,8 +112,8 @@ function DemoVideo() {
       <video
         src={phone ? '/demo-m.mp4' : '/demo.mp4'}
         poster={phone ? '/demo-m-poster.jpg' : '/demo-poster.jpg'}
-        width={phone ? 540 : 1600}
-        height={phone ? 992 : 1000}
+        width={phone ? 720 : 1600}
+        height={phone ? 1280 : 1000}
         muted
         loop
         playsInline

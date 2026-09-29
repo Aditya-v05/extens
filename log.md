@@ -4,6 +4,30 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing video edited in Remotion (branch `site-redesign`)
+
+> "no ant use like remotion ??"
+
+- **What:** the demo is now an edited Remotion video (`video/`) instead of a plain trim of the recording. It runs about 18 s:
+  1. an intro card ("Sift, on a real site.");
+  2. the icon click, with the camera easing in on the toolbar;
+  3. the Pylon result, with the camera following the panel through the score, why now and the best contact;
+  4. Save;
+  5. a closing card ("Sift through companies. Talk to the right ones.").
+
+  Each moment gets a caption (a mono label and a serif line) in its own band under the picture, so captions never sit on the page's text.
+- **Two compositions:** `SiftDemo` is 1600×1000 for desktop; `SiftDemoVertical` is 720×1280 and framed on the panel for phones. They are re-encoded for the web to 1.8 MB and 1.1 MB.
+- **Privacy fix:** checking every frame of the reveal showed the email appears at about 11.77 s, while the earlier blur only started at 11.8 s. So the plain cut pushed in the previous commit showed the email unblurred for about one frame. The blur now starts at 11.3 s (during "Revealing…"), and every frame of 11.0–14.4 s is blurred in both new cuts.
+- **Kept local:** the clean source (`video/public/clean.mp4`), renders (`video/out/`) and `node_modules` are git-ignored. `video/README.md` documents the source prep, the timeline and the render and re-encode commands.
+- **Verified:**
+  - stills at each moment in both sizes;
+  - frame-by-frame check of the reveal;
+  - the site plays each cut at 1440 and 390 px;
+  - no page errors;
+  - compile, 123 tests and `wxt build` pass.
+
+---
+
 ## 2026-09-30 — Landing: real screen recording replaces the scripted demo (branch `site-redesign`)
 
 > "can we use this for the video instead like edit or do changes on these maybe this might look better" (a 44 s screen recording of Sift on usepylon.com)

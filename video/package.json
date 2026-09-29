@@ -1,0 +1,20 @@
+{
+  "name": "sift-video",
+  "private": true,
+  "description": "The landing page demo, edited in Remotion from a real screen recording. See README.md.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts SiftDemo out/demo.mp4 --crf=24 && remotion render src/index.ts SiftDemoVertical out/demo-m.mp4 --crf=24"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.530",
+    "@remotion/google-fonts": "^4.0.530",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.530"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
