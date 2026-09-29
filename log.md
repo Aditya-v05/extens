@@ -4,6 +4,25 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing v4.1: quieter hero, maker strip in the footer (branch `site-redesign`)
+
+> "i dont want those lines/callouts at all - and i am not sure about the center logo also itd be cool to know that i have created this so a contact part at the footer would be cool as well"
+
+- **Hero:**
+  - removed the two annotation lines;
+  - replaced the boxed app icon with a glowing selection point that slowly breathes, so the picture no longer looks pasted on;
+  - the swirl now has a clear hierarchy: faint loose dust, medium dots on the arms, and the few selected dots mint, about twice the size and fully bright, orbiting tight around the point;
+  - about 35% fewer particles (3,400 desktop, 1,500 mobile).
+- **Footer:** a "Made by" strip above the links with the GitHub avatar, handle, one line ("A GTM engineer building Sift in the open…"), and buttons to the GitHub profile and to open an issue. No email is published.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - no overflow or page errors;
+  - every reveal fires on a real wheel scroll (the old QA script jumped past the new strip);
+  - `og.png` regenerated;
+  - 123 tests, `wxt build` and smoke (28) pass.
+
+---
+
 ## 2026-09-30 — Landing page v4: our own look (branch `site-redesign`, preview only)
 
 > "i like the style but it feels like we straight up ripped off we need to add our own twist … i dont necessarily want so much cursor action … we can have the 3js swirl as the main part not so small on the top … the text with the beautiful sift embed … bigger and more in the center"

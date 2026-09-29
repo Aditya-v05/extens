@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * None of them follow the cursor; they move on their own.
  *
  *  - Vortex: the hero. Sifting as panning for gold: companies spiral in, most are flung off the rim,
- *    the few worth talking to settle into a mint ring around the Sift mark.
+ *    the few worth talking to turn mint and settle around a glowing selection point.
  *  - Blinds: the privacy band. Closed blinds with a slow light behind them.
  *  - Slats: the footer. A sea of sieve bars rolling towards the horizon.
  */
@@ -181,7 +181,7 @@ const VORTEX_VERT = /* glsl */ `
       r = mix(rimR, rCut, pow(u, 0.85));
       th = th0 + 1.5 * uR / r;
       mint = pass * smoothstep(0.5, 1.0, u);
-      alpha = mix(0.62, 1.0, mint) * smoothstep(0.0, 0.14, u);
+      alpha = mix(mix(0.22, 0.6, onArm), 1.0, mint) * smoothstep(0.0, 0.14, u);
       alpha += (1.0 - pass) * 0.4 * smoothstep(0.86, 1.0, u);     // flash on the sieve
     } else {
       float v = (t - 0.72) / 0.28;
@@ -191,12 +191,12 @@ const VORTEX_VERT = /* glsl */ `
         r = rCut * (1.0 - 0.12 * v);
         th += v * 6.0;
         mint = 1.0;
-        alpha = 0.95 * (1.0 - smoothstep(0.7, 1.0, v));
+        alpha = 1.0 - smoothstep(0.7, 1.0, v);
       } else {
         // Rejected: flung back out over the rim, fading.
         r = rCut + v * v * uR * 1.4;
         th += v * 1.3;
-        alpha = 0.9 * (1.0 - smoothstep(0.0, 0.6, v));
+        alpha = mix(0.62, 1.0, onArm) * (1.0 - smoothstep(0.0, 0.6, v));
         rise = v * 0.18;
       }
     }
@@ -208,7 +208,7 @@ const VORTEX_VERT = /* glsl */ `
     vAlpha = alpha * (1.0 - 0.35 * far);
     vMint = mint;
     gl_Position = vec4(x / uAspect, y, 0.0, 1.0);
-    gl_PointSize = aSize * uDpr * (1.0 - 0.3 * far) * (1.0 + mint * 0.5);
+    gl_PointSize = aSize * uDpr * (1.0 - 0.3 * far) * mix(0.8 + 0.2 * onArm, 1.9, mint);
   }
 `;
 
@@ -275,7 +275,7 @@ function vortex(count: number): () => Stage {
         uniforms.uCy.value = l.cy;
         uniforms.uTilt.value = l.tilt;
         uniforms.uLift.value = l.lift;
-        uniforms.uCore.value = Math.max(0.15, (64 / h) * 2); // just outside the mark
+        uniforms.uCore.value = Math.max(0.07, (30 / h) * 2); // a tight orbit around the selection point
         uniforms.uDpr.value = dpr;
       },
       tick: (t) => { uniforms.uTime.value = t; },
@@ -301,7 +301,7 @@ function useStage(make: () => () => Stage, deps: unknown[]) {
  * vortex: --vx/--vy its centre in px, --vr its radius in px, --vt its tilt.
  */
 export function Vortex({ children }: { children?: ReactNode }) {
-  const [count] = useState(() => (window.innerWidth < 700 ? 2200 : 5200));
+  const [count] = useState(() => (window.innerWidth < 700 ? 1500 : 3400));
   const host = useStage(() => vortex(count), [count]);
   const [vars, setVars] = useState<Record<string, string>>({});
   useEffect(() => {

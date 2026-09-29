@@ -3,7 +3,6 @@ import { ContactPicker } from '@/components/ContactPicker';
 import { FitCard, ProfileCard, WhyNowCard } from '@/entrypoints/sidepanel/App';
 import type { LookupResult } from '@/lib/types';
 import icon48 from '../public/icon/48.png';
-import icon128 from '../public/icon/128.png';
 import { Demo } from './Demo';
 import { acme, acmeRevealed } from './demo-data';
 
@@ -11,6 +10,8 @@ const REPO = 'https://github.com/Aditya-v05/extens';
 const INSTALL = `${REPO}#install`;
 const PRIVACY = `${REPO}/blob/main/PRIVACY.md`;
 const LOG = `${REPO}/blob/main/log.md`;
+const MAKER = 'https://github.com/Aditya-v05';
+const ISSUES = `${REPO}/issues`;
 
 // three.js is most of the page's script; load it after the text has painted.
 const fx = () => import('./fx');
@@ -100,21 +101,14 @@ function Nav() {
 
 // ---------- hero: the vortex, big and centred; the headline under it ----------
 
-function HeroMarks() {
-  return (
-    <>
-      <div className="l-mark"><img src={icon128} alt="" width="52" height="52" /></div>
-      <p className="l-note in"><span>every company you visit</span></p>
-      <p className="l-note out"><span>the few worth your time</span></p>
-    </>
-  );
-}
+/** The selection point: where the few worth your time end up. */
+const Core = () => <div className="l-core" aria-hidden />;
 
 function Hero() {
   return (
     <section className="l-hero">
-      <Suspense fallback={<div className="l-vortex"><HeroMarks /></div>}>
-        <LazyVortex><HeroMarks /></LazyVortex>
+      <Suspense fallback={<div className="l-vortex"><Core /></div>}>
+        <LazyVortex><Core /></LazyVortex>
       </Suspense>
       <div className="l-hero-copy">
         <h1>
@@ -377,6 +371,18 @@ function End() {
         <div className="l-ctas">
           <a className="l-btn mint" href={INSTALL}>Install from GitHub</a>
           <a className="l-btn glass" href={REPO}>Read the source</a>
+        </div>
+      </div>
+      <div className="l-wrap l-maker" data-reveal>
+        <img src={`${MAKER}.png?size=112`} alt="" width="56" height="56" loading="lazy" />
+        <div className="l-maker-who">
+          <span className="l-mono">Made by</span>
+          <strong>Aditya-v05</strong>
+          <p>A GTM engineer building Sift in the open. Ideas, bugs, or just want to say hi? I read everything.</p>
+        </div>
+        <div className="l-maker-links">
+          <a className="l-btn glass" href={MAKER}>GitHub profile</a>
+          <a className="l-btn glass" href={ISSUES}>Open an issue</a>
         </div>
       </div>
       <div className="l-wrap l-footer-top">

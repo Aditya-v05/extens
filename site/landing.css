@@ -109,21 +109,12 @@ main p { line-height: 1.6; }
 .l-vortex { position: absolute; inset: 0; }
 .l-fx { position: absolute; inset: 0; animation: l-fade 1.6s var(--ease-out) both; }
 .l-fx canvas { display: block; }
-.l-mark {
-  position: absolute; left: var(--vx, 50%); top: var(--vy, 42%); transform: translate(-50%, -50%);
-  width: 92px; height: 92px; border-radius: 26px; display: grid; place-items: center;
-  background: radial-gradient(circle at 50% 40%, rgba(159, 242, 214, 0.16), rgba(11, 28, 30, 0.6) 70%);
-  border: 1px solid color-mix(in srgb, var(--mint) 45%, transparent);
-  animation: l-mark-in 1s var(--ease-expo) 0.2s both;
+.l-core {
+  position: absolute; left: var(--vx, 50%); top: var(--vy, 42%); width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: #e9fff6; box-shadow: 0 0 0 5px rgba(159, 242, 214, 0.14), 0 0 26px 8px rgba(159, 242, 214, 0.45), 0 0 90px 30px rgba(159, 242, 214, 0.12);
+  animation: l-fade 1.2s var(--ease-out) 0.4s both, l-breathe 4s var(--ease-move) 1.6s infinite;
 }
-@keyframes l-mark-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } }
-.l-mark img { border-radius: 13px; }
-/* Hand-set notes, like a diagram: grey on the rim where companies come in, mint by the ring that stays. */
-.l-note { position: absolute; margin: 0; font-family: var(--mono); font-size: 12px; white-space: nowrap; text-shadow: 0 0 6px #0b1c1e, 0 0 12px #0b1c1e; animation: l-fade 1s var(--ease-out) 1.2s both; }
-.l-note span { display: inline-block; padding-top: 8px; border-top: 1px solid currentColor; }
-.l-note.in { color: #7f9a97; left: calc(var(--vx, 50%) - var(--vr, 500px) * 0.98); top: calc(var(--vy, 42%) - var(--vr, 500px) * var(--vt, 0.34) * 0.72 - 14px); }
-.l-note.out { color: var(--mint); left: calc(var(--vx, 50%) + 96px); top: calc(var(--vy, 42%) + 44px); }
-.l-note.out span { padding-left: 2px; }
+@keyframes l-breathe { 50% { box-shadow: 0 0 0 7px rgba(159, 242, 214, 0.1), 0 0 34px 10px rgba(159, 242, 214, 0.55), 0 0 110px 36px rgba(159, 242, 214, 0.14); } }
 .l-hero-copy { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; }
 .l-hero h1 { font-size: clamp(50px, 7.2vw, 100px); line-height: 0.96; letter-spacing: -0.03em; animation: l-sharp 0.9s var(--ease-out) 0.15s both; text-wrap: balance; }
 .l-hero h1 em { color: var(--mint); }
@@ -291,6 +282,14 @@ main p { line-height: 1.6; }
 .l-end-copy { text-align: center; padding-top: 130px; padding-bottom: 120px; }
 .l-end h2 { color: #eef6f3; font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; margin: 0; font-size: clamp(44px, 6.4vw, 92px); line-height: 1; text-wrap: balance; }
 .l-end h2 em { color: var(--mint); }
+.l-maker { display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center; padding-bottom: 56px; }
+.l-maker img { border-radius: 50%; border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent); }
+.l-maker-who { display: grid; gap: 2px; }
+.l-maker-who .l-mono { color: #6f8a86; }
+.l-maker-who strong { font-size: 20px; letter-spacing: -0.01em; }
+.l-maker-who p { margin: 4px 0 0; color: #a9c2bd; font-size: 15px; line-height: 1.5; max-width: 36em; }
+.l-maker-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.l-maker-links .l-btn { font-size: 14.5px; padding: 10px 18px; }
 .l-footer-top { display: grid; grid-template-columns: 1.2fr 2fr; gap: 40px; padding-top: 44px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .l-end .l-brand { color: #eef6f3; }
 .l-footer-brand p { color: #93aca7; font-size: 15px; margin: 14px 0 0; max-width: 26em; }
@@ -315,9 +314,8 @@ main p { line-height: 1.6; }
   .l-nav nav { display: none; }
   .l-pill { margin-left: auto; }
   .l-hero { min-height: max(100svh, 700px); padding-bottom: 48px; }
-  .l-mark { width: 72px; height: 72px; border-radius: 20px; }
-  .l-mark img { width: 40px; height: 40px; }
-  .l-note { display: none; }
+  .l-maker { grid-template-columns: auto 1fr; }
+  .l-maker-links { grid-column: 1 / -1; }
   .l-site { display: none; }
   .l-panel, .l-panel.open { width: 100%; border-left: none; }
   .l-panel .l-panel-head, .l-panel-body { width: 100%; }
