@@ -41,7 +41,7 @@ export default function Landing() {
       <Nav />
       <main id="top">
         <Hero />
-        <section className="l-demo-wrap l-wrap" data-reveal>
+        <section id="demo" className="l-demo-wrap l-wrap" data-reveal>
           <Eyebrow label="Watch it read a homepage" />
           <Demo />
         </section>
@@ -91,7 +91,6 @@ function Nav() {
         <nav>
           <a href="#answers">How it works</a>
           <a href="#costs">Costs</a>
-          <a href="#privacy">Privacy</a>
           <a href={REPO}>GitHub</a>
         </nav>
         <a className="l-pill" href={INSTALL}>Install</a>
@@ -101,34 +100,73 @@ function Nav() {
   );
 }
 
-// ---------- hero: the vortex, big and centred; the headline under it ----------
+// ---------- hero: the promise on the left, the answer it produces on the right ----------
 
-/** The selection point: where the few worth your time end up. */
-const Core = () => <div className="l-core" aria-hidden />;
+const topContact = acmeRevealed.contacts![0]!;
 
 function Hero() {
   return (
     <section className="l-hero">
-      <Suspense fallback={<div className="l-vortex"><Core /></div>}>
-        <LazyVortex><Core /></LazyVortex>
-      </Suspense>
-      <div className="l-hero-copy">
-        <div className="l-headline">
-          <div className="l-wordmark" aria-hidden>SIFT</div>
+      <div className="l-hero-in">
+        <div className="l-hero-copy">
           <h1>
             Know who's worth <em>talking to.</em>
           </h1>
+          <p className="l-lede">
+            Sift qualifies any company you visit, explains why it matters now, and surfaces the best person to contact.
+          </p>
+          <div className="l-ctas">
+            <a className="l-btn mint" href={INSTALL}>Install Sift</a>
+            <a className="l-btn glass" href="#demo">See the demo</a>
+          </div>
+          <p className="l-fine">Free and open source. Runs on your own Apollo and Jev keys, one click in your browser.</p>
         </div>
-        <p className="l-lede">
-          Sift qualifies any company you visit, finds why they matter now, and surfaces the right person to contact. One click,
-          on your own Apollo and Jev keys.
-        </p>
-        <div className="l-ctas">
-          <a className="l-btn mint" href={INSTALL}>Install from GitHub</a>
-          <a className="l-btn glass" href="#answers">See how it works</a>
+
+        <div className="l-visual">
+          <div className="l-visual-fx">
+            <Suspense fallback={null}><LazyVortex /></Suspense>
+          </div>
+          <SignalCard />
         </div>
       </div>
     </section>
+  );
+}
+
+/** The panel's answer, condensed: every number here is the same one the real panel shows for Acme below. */
+function SignalCard() {
+  const why = acme.whyNow!;
+  return (
+    <div className="l-signal" aria-label="Example result for Acme">
+      <div className="l-signal-head">
+        <span className="l-signal-logo" aria-hidden>A</span>
+        <div className="l-signal-co">
+          <strong>{acme.company.name}</strong>
+          <span>{acme.company.domain}, {acme.company.headcount} employees</span>
+        </div>
+        <div className="l-signal-fit"><CountUp to={acme.fit!.score} /><small>fit</small></div>
+      </div>
+
+      <div className="l-signal-label"><span>Why now</span><b>Timing {why.timing}</b></div>
+      <ul className="l-signal-list">
+        {why.signals.slice(0, 3).map((sig) => (
+          <li key={sig.label}>
+            <span>{sig.label}</span>
+            <em>{Math.round(sig.relevance * 100)}%</em>
+          </li>
+        ))}
+      </ul>
+
+      <div className="l-signal-label"><span>Talk to</span></div>
+      <div className="l-signal-person">
+        <span className="l-signal-avatar" aria-hidden>{topContact.firstName[0]}{topContact.lastName?.[0]}</span>
+        <div>
+          <strong>{topContact.firstName} {topContact.lastName}</strong>
+          <span>{topContact.title}</span>
+        </div>
+        <b>{topContact.rank}</b>
+      </div>
+    </div>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 /*
@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * None of them follow the cursor; they move on their own.
  *
  *  - Vortex: the hero. Sifting as panning for gold: companies spiral in, most are flung off the rim,
- *    the few worth talking to turn mint and settle around a glowing selection point.
+ *    the few worth talking to turn mint and settle at the centre, behind the result card they become.
  *  - Blinds: the privacy band. Closed blinds with a slow light behind them.
  *  - Slats: the footer. A sea of sieve bars rolling towards the horizon.
  */
@@ -224,17 +224,10 @@ const VORTEX_FRAG = /* glsl */ `
   }
 `;
 
-/** Where the vortex sits for a given canvas shape, in canvas units (y from -1 to 1, x scaled by height). */
+/** The vortex fills its host, centred: canvas units (y from -1 to 1, x scaled by height). */
 export function vortexLayout(w: number, h: number) {
   const aspect = w / h;
-  const narrow = aspect < 0.9;
-  return {
-    aspect,
-    R: Math.min(narrow ? 1.0 : 1.22, aspect * (narrow ? 1.08 : 0.9)),
-    cy: narrow ? 0.24 : 0.16,
-    tilt: narrow ? 0.58 : 0.38,
-    lift: 0.12,
-  };
+  return { aspect, R: Math.min(0.95, aspect * 0.95), cy: 0, tilt: 0.72, lift: 0.06 };
 }
 
 function vortex(count: number): () => Stage {
@@ -296,34 +289,11 @@ function useStage(make: () => () => Stage, deps: unknown[]) {
   return host;
 }
 
-/**
- * The hero picture. Children (the Sift mark, the notes) are placed with CSS variables that follow the
- * vortex: --vx/--vy its centre in px, --vr its radius in px, --vt its tilt.
- */
-export function Vortex({ children }: { children?: ReactNode }) {
-  const [count] = useState(() => (window.innerWidth < 700 ? 1500 : 3400));
+/** The hero picture: a sparse swirl of companies, drawn behind the result card it feeds. */
+export function Vortex() {
+  const [count] = useState(() => (window.innerWidth < 700 ? 900 : 1700));
   const host = useStage(() => vortex(count), [count]);
-  const [vars, setVars] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const el = host.current;
-    if (!el) return;
-    const place = () => {
-      const w = el.clientWidth;
-      const h = el.clientHeight;
-      const l = vortexLayout(w, h);
-      setVars({ '--vx': `${w / 2}px`, '--vy': `${((1 - l.cy) / 2) * h}px`, '--vr': `${(l.R * h) / 2}px`, '--vt': String(l.tilt) });
-    };
-    place();
-    const ro = new ResizeObserver(place);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [host]);
-  return (
-    <div className="l-vortex" style={vars as CSSProperties}>
-      <div className="l-fx" ref={host} aria-hidden />
-      {children}
-    </div>
-  );
+  return <div className="l-fx" ref={host} aria-hidden />;
 }
 
 export function Blinds() {

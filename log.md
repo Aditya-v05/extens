@@ -4,6 +4,31 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing v5: product-first hero (branch `site-redesign`)
+
+> Pasted critique: the hero had too many competing focal points (galaxy, ghost wordmark, long grey paragraph, three CTAs); "Don't sell mystery in space. Sell clarity from noise." Recommended: copy left, a real product result right, sparse dots, no ghost wordmark, one primary CTA, Privacy out of the top nav. The user: "i think we might have to use the best".
+
+- **Left:**
+  - "Know who's worth talking to.";
+  - a shorter lede ("…explains why it matters now, and surfaces the best person to contact.");
+  - **Install Sift** (primary) and **See the demo** (scrolls to `#demo`);
+  - one quiet line: "Free and open source. Runs on your own Apollo and Jev keys, one click in your browser."
+- **Right:** a condensed result card for Acme: fit 90, why now (Timing 74, with hiring 86%, moving upmarket 71%, headcount 62%), and Talk to Ingrid Holm, VP Customer Experience, 92. Every number is read from `demo-data.ts`, so it matches the real panel in the demo below. Rows arrive in the order Sift works.
+- **Swirl:** now a sparse ring (1,700 dots, down from 3,400; 900 on phones), tilted face-on so it frames the card as the thing it feeds.
+- **Removed:** the ghost "SIFT" wordmark, the selection point, and Privacy from the top nav (it stays in the footer).
+- **Fixes:**
+  - the web stub gained `tabs.onActivated/onUpdated` and `permissions.request`, because the demo renders the real panel, which now listens for tab switches;
+  - the avatar initials had inherited the job-title style.
+- **Verified:**
+  - screenshots at 1440 and 390 px;
+  - every reveal fires on scroll;
+  - no overflow or page errors; reduced motion OK;
+  - `og.png` regenerated (headline and card);
+  - compile, 123 tests, `wxt build` and smoke pass.
+- **Note:** the round widget at the right edge of the user's screenshots comes from a browser extension on their machine, not from the site.
+
+---
+
 ## 2026-09-30 — Sift this page: re-sift after switching tabs
 
 > "we need a refresh button like once i switch to different site with the panel open i need to have a button the re-sifts if it doesnt"
