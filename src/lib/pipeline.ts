@@ -6,7 +6,7 @@ import {
   type Candidate, type DiscoverResult,
 } from './discover';
 import { applyReveals, type RevealPatch } from './contacts';
-import { SENIOR, functionKeywords, mergePeople } from './people';
+import { MAX_PEOPLE, SENIOR, excludeByTitle, mergePeople, peopleFilters, type PeopleFilters } from './people';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
 import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
@@ -112,7 +112,7 @@ async function lookup(
   // Jev #1 (fit, checks, persona) runs alongside the free people search and the job postings fetch.
   const [answers, found, postings] = await Promise.all([
     jev.ask(keys.typesafe, state, accountQuestions(profile)),
-    findPeople(keys.apollo, company.apolloId, profile.rules.personas),
+    findPeople(keys.apollo, company.apolloId, peopleFilters(profile.rules)),
     settings.fetchJobs ? getJobsOrNull(keys.apollo, company.apolloId) : Promise.resolve('off' as const),
   ]);
   const jobsStatus: WhyNow['jobsStatus'] = postings === 'off' ? 'off' : postings === null ? 'unavailable' : 'ok';
@@ -223,27 +223,32 @@ async function getJobsOrNull(key: string, organizationId: string) {
 }
 
 /**
- * People search is free, so cast a wider net in parallel and put senior people first:
- *  1. the persona titles among senior people;
- *  2. senior people in each persona's function ("customer experience", "support"), which catches
- *     titles the personas don't spell out, e.g. "Head of Customer Operations";
- *  3. the persona titles at any level, to fill in.
- * Title matching alone returned 15 customer-experience reps at Ramp and missed its Head of Customer
- * Operations (2026-09-29).
+ * People search is free, so cast a wider net in parallel and put senior people first, using the user's
+ * "Who to look for" settings (peopleFilters):
+ *  1. their titles among the chosen seniorities;
+ *  2. each keyword among the chosen seniorities (catches titles they didn't spell out, e.g.
+ *     "Head of Customer Operations" for "customer");
+ *  3. their titles at any level, to fill in.
+ * Then excluded titles are dropped here (Apollo's API ignores its own exclusion filter).
  */
-export async function findPeople(key: string, organizationId: string, personas: string[]) {
-  if (personas.length) {
-    const lists = await Promise.all([
-      apollo.searchPeople(key, { organizationId, titles: personas, seniorities: SENIOR }),
-      ...functionKeywords(personas).map((keywords) => apollo.searchPeople(key, { organizationId, keywords, seniorities: SENIOR })),
-      apollo.searchPeople(key, { organizationId, titles: personas }),
-    ]);
-    const contacts = mergePeople(lists);
+export async function findPeople(key: string, organizationId: string, f: PeopleFilters) {
+  const seniorities = f.seniorities.length ? f.seniorities : undefined;
+  const searches: Promise<Contact[]>[] = [];
+  if (f.titles.length) searches.push(apollo.searchPeople(key, { organizationId, titles: f.titles, seniorities }));
+  for (const keywords of f.keywords.slice(0, MAX_KEYWORD_SEARCHES)) {
+    searches.push(apollo.searchPeople(key, { organizationId, keywords, seniorities }));
+  }
+  if (f.titles.length && seniorities) searches.push(apollo.searchPeople(key, { organizationId, titles: f.titles }));
+  if (searches.length) {
+    const contacts = excludeByTitle(mergePeople(await Promise.all(searches), Infinity), f.excludeTitles).slice(0, MAX_PEOPLE);
     if (contacts.length) return { contacts, fallback: false };
   }
-  const contacts = await apollo.searchPeople(key, { organizationId, seniorities: SENIOR });
+  const contacts = excludeByTitle(await apollo.searchPeople(key, { organizationId, seniorities: seniorities ?? SENIOR }), f.excludeTitles);
   return { contacts, fallback: true };
 }
+
+/** Keyword searches per lookup (each is one free Apollo request). */
+const MAX_KEYWORD_SEARCHES = 5;
 
 /** Rank people in batches of ROLE_BATCH (long lists blur Jev's answers); keys are rank_<index into contacts>. */
 export async function rankPeople(key: string, state: object, contacts: Contact[]): Promise<Record<string, Answer>> {

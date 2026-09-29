@@ -39,6 +39,10 @@ describe('generateRules', () => {
     expect(rules.countries).toEqual(['United States']);
     expect(rules.checks).toEqual(['Series A–C SaaS companies', 'large customer support teams']);
     expect(rules.personas).toEqual(['VP Customer Experience', 'Head of Support', 'COO']);
+    // "Who to look for" is filled in from the personas.
+    expect(rules.seniorities).toEqual(['owner', 'founder', 'c_suite', 'partner', 'vp', 'head', 'director']);
+    expect(rules.keywords).toEqual(['customer', 'experience', 'support']);
+    expect(rules.excludeTitles).toEqual([]);
   });
 });
 

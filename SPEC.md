@@ -231,10 +231,14 @@ Signals with relevance ≥ 0.5 are shown; the rest sit behind "Show less relevan
 ### Decision 3 — Person: "Who most likely owns the problem?"
 - `persona` — **Choice** over the user's personas plus `none_fit`. Asked in Jev call #1.
 - `rank_<id>` — **Score** per candidate person (title): "How likely is this person to own the problem the seller solves?" Ranked in **batches of 10**, run in parallel (`rankPeople`). Reachable people (has an email) sort first, then by score.
-- **Finding people** (`findPeople`, all free), three searches in parallel, merged senior-first with duplicates removed, up to 25:
-  1. the persona titles among senior people (owner, founder, C-level, partner, VP, head, director);
-  2. senior people matching each **single function word** from the personas ("customer", "experience", "support");
-  3. the persona titles at any level, to fill in.
+- **Finding people** (`findPeople`, all free). Driven by the user's **Who to look for** settings (`peopleFilters`; defaults from the personas):
+  - *Titles* (the personas), *Seniority* (Apollo levels; default owner, founder, C-level, partner, VP, head, director), *Keywords* (single words; default the function words of the personas; up to 5 searched), and *Leave out titles containing*.
+  - Searches run in parallel and are merged senior-first with duplicates removed, up to 25:
+    1. titles at the chosen seniorities;
+    2. one search per keyword at the chosen seniorities;
+    3. titles at any level, to fill in.
+  - Exclusions are applied by Sift after merging, because Apollo's API ignores its own `person_not_titles`.
+  - **Filters Apollo's API does honour:** titles, seniorities, keywords. Tried at Ramp without success: `include_similar_titles` (0 results); department filters (0 results with the parameter name tried; it isn't documented, so it's unconfirmed); `person_not_titles` (ignored). So those aren't exposed.
   - **Why:** at Ramp (2026-09-29) title matching alone returned 15 customer-experience reps and missed the Head of Customer Operations. The keyword "customer" among senior people found her and four Customer Success heads; she now ranks first (62, reps 44–49).
   - A search without a company id is refused: Apollo would ignore the filter and search everyone (333k people in one test).
 

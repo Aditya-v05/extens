@@ -3,6 +3,7 @@ import { StateIcon } from '@/components/Icon';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost, totalSpent } from '@/lib/credits';
 import { openAccounts, send, type KeyTest } from '@/lib/messages';
+import { SENIORITY_OPTIONS, peopleFilters } from '@/lib/people';
 import { generateRules } from '@/lib/rules';
 import * as store from '@/lib/storage';
 import type { Keys, ProfileAnswers, Rules } from '@/lib/types';
@@ -201,11 +202,56 @@ function RulesEditor({ rules, onChange }: { rules: Rules; onChange: (r: Rules) =
         items={rules.checks}
         onChange={(checks) => onChange({ ...rules, checks })}
       />
+      <PeopleEditor rules={rules} onChange={onChange} />
+    </div>
+  );
+}
+
+/** "Who to look for": the few Apollo people filters its API actually honours, plus our own exclusion. */
+function PeopleEditor({ rules, onChange }: { rules: Rules; onChange: (r: Rules) => void }) {
+  const f = peopleFilters(rules);
+  const toggle = (value: string, on: boolean) => {
+    const next = on ? [...f.seniorities, value] : f.seniorities.filter((s) => s !== value);
+    // Keep Apollo's order, most senior first.
+    onChange({ ...rules, seniorities: SENIORITY_OPTIONS.map(([v]) => v).filter((v) => next.includes(v)) });
+  };
+  return (
+    <div className="people-editor stack">
+      <h3>Who to look for</h3>
+      <p className="small muted">
+        Sift searches Apollo three ways and ranks everyone it finds: your titles at the seniorities below, then people at those
+        seniorities whose title mentions a keyword, then your titles at any level. People search costs no credits.
+      </p>
       <ListEditor
-        label="Buyer personas (job titles)"
-        hint="Used to search Apollo and to pick the best persona."
+        label="Titles"
+        hint="e.g. VP Customer Experience. Also used to pick the best persona."
         items={rules.personas}
         onChange={(personas) => onChange({ ...rules, personas })}
+      />
+      <div>
+        <label>Seniority</label>
+        <div className="row wrap seniorities">
+          {SENIORITY_OPTIONS.map(([value, label]) => (
+            <label key={value} className="row checkbox">
+              <input type="checkbox" checked={f.seniorities.includes(value)} onChange={(e) => toggle(value, e.target.checked)} />
+              {label}
+            </label>
+          ))}
+        </div>
+        {!f.seniorities.length && <div className="small muted">None checked: any level.</div>}
+      </div>
+      <ListEditor
+        label="Keywords"
+        hint="One word each, e.g. operations. Finds titles you didn't list, like Head of Customer Operations."
+        items={f.keywords}
+        onChange={(keywords) => onChange({ ...rules, keywords })}
+      />
+      {f.keywords.length > 5 && <div className="small muted">Only the first 5 keywords are searched on each lookup.</div>}
+      <ListEditor
+        label="Leave out titles containing"
+        hint="e.g. intern, associate"
+        items={f.excludeTitles}
+        onChange={(excludeTitles) => onChange({ ...rules, excludeTitles })}
       />
     </div>
   );
@@ -284,7 +330,8 @@ function CreditsSection() {
         <div>
           <strong>{totalSpent(ledger)}</strong>
           <span className="muted small">
-            {' '}({ledger.company} company lookups, {ledger.jobs} job-posting fetches, {ledger.reveal} email reveals)
+            {' '}({ledger.company} company lookups, {ledger.jobs} job-posting fetches, {ledger.reveal} email reveals
+            {ledger.search ? `, ${ledger.search} Discover searches` : ''})
           </span>
         </div>
       </div>

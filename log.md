@@ -4,6 +4,34 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — "Who to look for": the people filters, in Settings
+
+> "should we maybe just uhm recreate the apollo filters ?"
+
+Not the whole Apollo panel; only what its API actually honours.
+
+- **Probed at Ramp (free):**
+  - titles and seniorities work; keywords work;
+  - `include_similar_titles` returned nothing;
+  - department filters returned nothing (with the parameter name tried; it isn't documented);
+  - `person_not_titles` was ignored.
+  - Copying Apollo's filter UI would have shown controls that silently do nothing.
+- **Settings → What you sell → Who to look for** (prefilled from the personas, saved with the profile):
+  - **Titles:** the personas.
+  - **Seniority:** Apollo's 10 levels as checkboxes; default owner…director; none checked = any level.
+  - **Keywords:** one word each; default the personas' function words; the first 5 are searched.
+  - **Leave out titles containing:** applied by Sift, whole words, any case.
+- **Data:** `Rules` gains optional `seniorities`, `keywords`, `excludeTitles`. `peopleFilters()` fills defaults, so older profiles work unchanged, and `generateRules` sets them for new ones.
+- **Search:** `findPeople` takes these filters: titles at the chosen seniorities, one search per keyword, titles at any level, merged senior-first, exclusions dropped, up to 25. With no seniority checked it doesn't repeat the title search.
+- **Settings also** counts Discover searches in "Spent by Sift this month".
+- **Tests:**
+  - defaults for old profiles; whole-word exclusion ("Internal" isn't "intern");
+  - `findPeople` sends the exact searches in order, puts senior people first, drops exclusions, handles any-level and fallback;
+  - `generateRules` fills the new fields.
+  - 105 unit tests pass. Smoke adds: 7 seniorities checked by default, titles and keywords from the personas, and adding "operations" + unticking Partner is saved. 26/26 pass.
+
+---
+
 ## 2026-09-29 — Finding the real owner (Ramp)
 
 > "is there no better cx head in ramp ?"

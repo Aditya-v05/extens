@@ -1,3 +1,4 @@
+import { SENIOR, functionKeywords } from './people';
 import type { Check, Company, ProfileAnswers, Rules } from './types';
 
 const EMPLOYEE_WORDS = String.raw`(?:employees?|people|staff|ftes?|headcount|persons?|emp)`;
@@ -111,6 +112,9 @@ export function generateRules(answers: ProfileAnswers): Rules {
     countries: geo.countries,
     checks: [...new Set(checks)],
     personas,
+    seniorities: [...SENIOR],
+    keywords: functionKeywords(personas),
+    excludeTitles: [],
   };
 }
 

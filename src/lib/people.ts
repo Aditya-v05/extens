@@ -1,7 +1,38 @@
-import type { Contact } from './types';
+import type { Contact, Rules } from './types';
 
-/** Apollo seniorities that can own a problem and a budget. */
+/** Apollo's seniority values, most senior first, with how Settings shows them. */
+export const SENIORITY_OPTIONS: [string, string][] = [
+  ['owner', 'Owner'], ['founder', 'Founder'], ['c_suite', 'C-level'], ['partner', 'Partner'], ['vp', 'VP'],
+  ['head', 'Head'], ['director', 'Director'], ['manager', 'Manager'], ['senior', 'Senior'], ['entry', 'Entry'],
+];
+
+/** Default: the levels that can own a problem and a budget. */
 export const SENIOR = ['owner', 'founder', 'c_suite', 'partner', 'vp', 'head', 'director'];
+
+export interface PeopleFilters {
+  titles: string[];
+  seniorities: string[];
+  keywords: string[];
+  excludeTitles: string[];
+}
+
+/** The user's "Who to look for" settings, with defaults for anything not set (e.g. older profiles). */
+export function peopleFilters(rules: Rules): PeopleFilters {
+  return {
+    titles: rules.personas,
+    seniorities: rules.seniorities ?? SENIOR,
+    keywords: rules.keywords ?? functionKeywords(rules.personas),
+    excludeTitles: rules.excludeTitles ?? [],
+  };
+}
+
+/** Drop people whose title contains an excluded word (whole word, any case). */
+export function excludeByTitle(people: Contact[], excluded: string[]): Contact[] {
+  const words = excluded.map((w) => w.trim().toLowerCase()).filter(Boolean);
+  if (!words.length) return people;
+  const res = words.map((w) => new RegExp(`(^|[^a-z])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z]|$)`, 'i'));
+  return people.filter((p) => !res.some((re) => re.test(p.title ?? '')));
+}
 /** Enough to find the real owner without flooding Jev (ranked in batches of 10). */
 export const MAX_PEOPLE = 25;
 
@@ -24,7 +55,7 @@ export function functionKeywords(personas: string[]): string[] {
       if (w.length > 3 && !RANK_WORDS.has(w) && !out.includes(w)) out.push(w);
     }
   }
-  return out.slice(0, 3);
+  return out.slice(0, 5);
 }
 
 /** Merge search results in priority order, without duplicates, up to a cap. */

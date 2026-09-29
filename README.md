@@ -58,7 +58,7 @@ The settings page opens on install:
 3. **Generate rules**, then edit them:
    - *Company size* and *countries* are checked exactly against Apollo data.
    - Each *company check* ("B2B SaaS", "large support team") is a yes/no question for Jev.
-   - *Buyer personas* drive the Apollo search and the persona pick.
+   - *Who to look for* (all prefilled): titles, seniority levels, keywords (single words such as "operations", which find titles you didn't list) and titles to leave out. People search costs no credits.
 
 ## How it works
 

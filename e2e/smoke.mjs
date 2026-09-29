@@ -129,6 +129,20 @@ check(!/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\u2605\u2606\u2713\u2717]/u.test(text),
 const opts = await ctx.newPage();
 await opts.goto(`chrome-extension://${id}/options.html`);
 await opts.waitForSelector('text=Apollo credits');
+
+// Who to look for: defaults from the personas, editable, saved with the profile.
+await opts.waitForSelector('text=Who to look for');
+const checked = await opts.locator('.seniorities input:checked').count();
+check(checked === 7, `seniority defaults to owner..director (${checked} checked)`);
+const keywordInputs = await opts.locator('.people-editor .list input').evaluateAll((els) => els.map((e) => e.value));
+check(keywordInputs.join() === 'VP Customer Experience,Head of Support,COO,customer,experience,support', `titles and keywords come from the personas (${keywordInputs.join(', ')})`);
+await opts.fill('input[placeholder^="One word each"]', 'operations');
+await opts.press('input[placeholder^="One word each"]', 'Enter');
+await opts.locator('.seniorities label', { hasText: 'Partner' }).locator('input').uncheck();
+await opts.click('button:has-text("Save profile")');
+await opts.waitForTimeout(200);
+const savedRules = await opts.evaluate(async () => (await chrome.storage.local.get('profile')).profile.rules);
+check(savedRules.keywords.includes('operations') && !savedRules.seniorities.includes('partner'), 'edited filters are saved with the profile');
 await opts.screenshot({ path: `${OUT}/settings.png`, fullPage: true });
 
 check(await panel.locator('text=Why now').count() > 0, 'side panel renders a lookup');

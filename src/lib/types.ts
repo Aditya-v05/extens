@@ -22,6 +22,15 @@ export interface Rules {
   checks: string[];
   /** Buyer titles, used for Apollo search and Jev persona choice. */
   personas: string[];
+  /**
+   * "Who to look for" (people search). Optional so profiles saved before it existed still load;
+   * read through peopleFilters() in people.ts, which fills in defaults.
+   */
+  seniorities?: string[];
+  /** Single words searched among senior people, e.g. "customer", "support", "operations". */
+  keywords?: string[];
+  /** Titles containing any of these words are dropped from results (Apollo's own exclusion is ignored by its API). */
+  excludeTitles?: string[];
 }
 
 export interface Profile {
