@@ -1,0 +1,38 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 16px;
+}
+.panel > footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+.grow { flex: 1; min-width: 0; }
+
+.empty { padding-top: 32px; }
+.empty h1 { font-size: 18px; }
+.empty p { margin: 0; }
+
+.company { display: flex; align-items: center; gap: 12px; }
+.company h1 { font-size: 20px; line-height: 1.2; }
+.logo { width: 40px; height: 40px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--border); flex-shrink: 0; }
+.logo.placeholder { display: grid; place-items: center; font-weight: 600; background: var(--surface); }
+
+.score { font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+.score.good { color: var(--good); }
+.score.warn { color: var(--warn); }
+.score.bad { color: var(--bad); }
+
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.checks li { display: flex; align-items: baseline; gap: 8px; }
+.checks .icon { width: 14px; text-align: center; font-weight: 700; }
+.checks .pass .icon { color: var(--good); }
+.checks .fail .icon { color: var(--bad); }
+.checks .unknown .icon { color: var(--muted); }
+
+.contact { display: flex; flex-direction: column; gap: 10px; }
+.contact.featured { border-color: var(--accent); }
+.contact .email code { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rank { display: flex; align-items: center; gap: 6px; }
+.rank .bar { width: 48px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.rank .bar > div { height: 100%; background: var(--accent); }
