@@ -4,6 +4,22 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing: portfolio and email in the maker strip (branch `site-redesign`)
+
+> "add my portfolio in the contact part and this along with my email"
+
+- **Maker strip:**
+  - now reads "Made by Aditya Venkatesan" (name from the portfolio);
+  - shows the email as a mono link;
+  - buttons: Portfolio (https://aditya-venkatesan-gtm.vercel.app/, mint, primary), Email me (mailto), GitHub.
+- **Footer:** "Report an issue" moved into the Project column.
+- **Verified:**
+  - screenshots of the strip at 1440 and 390 px;
+  - no overflow or page errors;
+  - compile and tests pass.
+
+---
+
 ## 2026-09-30 — Landing v4.2: outline wordmark behind the swirl (branch `site-redesign`)
 
 > "can we incorporate this part into the hero section somehow i really like it" (the outline SIFT wordmark from v3)

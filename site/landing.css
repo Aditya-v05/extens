@@ -294,6 +294,8 @@ main p { line-height: 1.6; }
 .l-maker-who .l-mono { color: #6f8a86; }
 .l-maker-who strong { font-size: 20px; letter-spacing: -0.01em; }
 .l-maker-who p { margin: 4px 0 0; color: #a9c2bd; font-size: 15px; line-height: 1.5; max-width: 36em; }
+.l-maker-mail { font-family: var(--mono); font-size: 13px; color: var(--mint); text-decoration: none; margin-top: 8px; width: fit-content; border-bottom: 1px solid color-mix(in srgb, var(--mint) 35%, transparent); }
+.l-maker-mail:hover { border-bottom-color: var(--mint); }
 .l-maker-links { display: flex; flex-wrap: wrap; gap: 10px; }
 .l-maker-links .l-btn { font-size: 14.5px; padding: 10px 18px; }
 .l-footer-top { display: grid; grid-template-columns: 1.2fr 2fr; gap: 40px; padding-top: 44px; border-top: 1px solid rgba(255, 255, 255, 0.1); }

@@ -11,6 +11,8 @@ const INSTALL = `${REPO}#install`;
 const PRIVACY = `${REPO}/blob/main/PRIVACY.md`;
 const LOG = `${REPO}/blob/main/log.md`;
 const MAKER = 'https://github.com/Aditya-v05';
+const PORTFOLIO = 'https://aditya-venkatesan-gtm.vercel.app/';
+const EMAIL = 'adityspark05@gmail.com';
 const ISSUES = `${REPO}/issues`;
 
 // three.js is most of the page's script; load it after the text has painted.
@@ -382,12 +384,14 @@ function End() {
         <img src={`${MAKER}.png?size=112`} alt="" width="56" height="56" loading="lazy" />
         <div className="l-maker-who">
           <span className="l-mono">Made by</span>
-          <strong>Aditya-v05</strong>
+          <strong>Aditya Venkatesan</strong>
           <p>A GTM engineer building Sift in the open. Ideas, bugs, or just want to say hi? I read everything.</p>
+          <a className="l-maker-mail" href={`mailto:${EMAIL}`}>{EMAIL}</a>
         </div>
         <div className="l-maker-links">
-          <a className="l-btn glass" href={MAKER}>GitHub profile</a>
-          <a className="l-btn glass" href={ISSUES}>Open an issue</a>
+          <a className="l-btn mint" href={PORTFOLIO}>Portfolio</a>
+          <a className="l-btn glass" href={`mailto:${EMAIL}`}>Email me</a>
+          <a className="l-btn glass" href={MAKER}>GitHub</a>
         </div>
       </div>
       <div className="l-wrap l-footer-top">
@@ -406,6 +410,7 @@ function End() {
             <h4>Project</h4>
             <a href={REPO}>GitHub</a>
             <a href={LOG}>Changelog</a>
+            <a href={ISSUES}>Report an issue</a>
             <a href={`${REPO}/blob/main/LICENSE`}>MIT license</a>
           </div>
           <div>
