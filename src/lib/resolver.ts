@@ -46,3 +46,36 @@ export function normalizeDomainInput(input: string): string | null {
   if (!s) return null;
   return domainFromUrl(/^https?:\/\//i.test(s) ? s : `https://${s}`);
 }
+
+/**
+ * A LinkedIn profile address, normalised to https://www.linkedin.com/in/<slug>, or null.
+ * Sift only uses the address (to ask Apollo who it is); it never reads LinkedIn pages.
+ */
+export function linkedinProfile(url: string | null | undefined): string | null {
+  if (!url) return null;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (!/^https?:$/.test(u.protocol) || !/(^|\.)linkedin\.com$/i.test(u.hostname)) return null;
+  const m = u.pathname.match(/^\/in\/([^/]+)/i);
+  if (!m) return null;
+  let slug: string;
+  try {
+    slug = decodeURIComponent(m[1]!);
+  } catch {
+    slug = m[1]!;
+  }
+  slug = slug.trim().toLowerCase();
+  return slug ? `https://www.linkedin.com/in/${encodeURIComponent(slug)}` : null;
+}
+
+export const isLinkedin = (url: string | null | undefined) => {
+  try {
+    return !!url && /(^|\.)linkedin\.com$/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+};

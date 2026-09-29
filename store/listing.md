@@ -21,6 +21,8 @@ Sift is for anyone doing outbound. Open a company's website, click the Sift icon
 
 • Who should you talk to? The people most likely to own the problem you solve, ranked. Reveal one email or all of them at once, with the credit cost shown first.
 
+On a LinkedIn profile, Sift finds out who the person is from the page address (through Apollo), shows their company's fit and where they rank among the people there, and gives you their email. It never reads LinkedIn pages.
+
 My Accounts keeps companies you save, ranked by fit and timing, with status, notes and CSV export. Discover finds companies like your best accounts.
 
 Bring your own keys: Sift uses your Apollo account for company and people data and TypeSafe's Jev model for judgments. There is no Sift server and no tracking; everything stays in your browser. Sift shows what each action costs in Apollo credits and can stop at a monthly budget.
@@ -32,7 +34,7 @@ Help a salesperson decide whether the company whose website they're on is worth 
 
 ## Permission justifications
 
-- **activeTab:** read the address of the tab when the user clicks the Sift icon, to know which company to look up. No access to other tabs or history.
+- **activeTab:** read the address of the tab when the user clicks the Sift icon, to know which company (or, on LinkedIn, which profile) to look up. No access to other tabs or history. LinkedIn page content is never read.
 - **scripting:** when the user clicks the icon, read the current page and the same site's public pricing, blog, changelog and security pages, to find evidence for "why now" signals. Can be turned off in Settings.
 - **sidePanel:** show results beside the page.
 - **storage:** keep the user's API keys, profile, cached results, saved accounts and credit count locally.

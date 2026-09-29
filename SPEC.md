@@ -69,6 +69,17 @@ Phone numbers · automated outbound · email/opener generation · sequences · C
    - **How reveals run:** 3 requests at a time, credits recorded only for people Apollo finds, and cache / saved account / panel each updated in **one** write, so parallel reveals can't overwrite each other.
    - **Afterwards:** a summary, e.g. "Revealed 5 emails. 1 had no email in Apollo.".
 
+### 4.2b LinkedIn profiles (built)
+- **Trigger:** clicking Sift on `linkedin.com/in/<slug>`. The address is normalised (`linkedinProfile`); only the address is used, never the page.
+- **Identify:** `POST /people/match` with `linkedin_url` (1 credit, recorded as a reveal) returns the person (name, title, **headline**, verified email) and their company (`organization.primary_domain`, id). Live check: Cristina Cordova's URL → COO, verified email, Linear / linear.app, 1.1s.
+- **Lookup:** the normal lookup runs on that domain with the person as `focus`: added to the contacts before ranking (their headline goes to Jev), and the result is marked `profile`. The panel shows **On this profile** first: name, headline, rank bar, "Ranks N of M here", email with Copy.
+  - The cached and saved copies of the company don't carry the `profile` marker.
+  - If the company is already cached and doesn't include the person, only they are ranked and inserted.
+- **Cache:** matches are kept 30 days (`profileMatches`), so a revisit is free.
+- **Budget:** checked up front for 1 + the lookup cost; "Look up anyway" and Refresh carry the profile URL.
+- **Edge cases:** Apollo doesn't know the profile → not found; no company → the person and their email, with a pointer to the company's site; other LinkedIn pages → "Open a person's profile".
+- **Live, end to end (3 credits):** Cristina's profile → Linear's lookup with her #1 of 25 (66), Skyline Lau second, Alexandra (Product Operations Lead) third, in 3.5s. The revisit was free and instant.
+
 ### 4.3 Reveal, save, export
 - **Reveal:** calls Apollo's enrichment for that one person. The email and its status (verified/guessed) are cached with the contact.
 - **Save account:** stores the snapshot (company, score, contacts, revealed emails) locally.

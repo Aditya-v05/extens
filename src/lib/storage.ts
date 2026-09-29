@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import { DEFAULT_SETTINGS, addSpend, current, type Balance, type Ledger, type Settings, type SpendKind } from './credits';
 import { EMPTY_META, type AccountMeta } from './accounts';
+import type { ProfileMatch } from './apollo';
 import type { DiscoverResult } from './discover';
 import type { Contact, Keys, LookupResult, Profile, ViewState } from './types';
 
@@ -18,6 +19,7 @@ type LocalSchema = {
   accountMeta: Record<string, AccountMeta>;
   discover: DiscoverResult;
   dismissed: string[];
+  profileMatches: Record<string, ProfileMatch & { fetchedAt: number }>;
 };
 
 async function getLocal<K extends keyof LocalSchema>(key: K): Promise<LocalSchema[K] | undefined> {
@@ -88,6 +90,22 @@ export async function saveAccount(result: LookupResult): Promise<void> {
   const saved = await getSaved();
   saved[result.domain] = { ...result, savedAt: saved[result.domain]?.savedAt ?? Date.now() };
   await setLocal('saved', saved);
+}
+
+/** LinkedIn profile → person and company, kept 30 days so revisiting a profile costs nothing. */
+const PROFILE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export async function getProfileMatch(url: string): Promise<ProfileMatch | null> {
+  const hit = (await getLocal('profileMatches'))?.[url];
+  return hit && Date.now() - hit.fetchedAt < PROFILE_TTL_MS ? hit : null;
+}
+
+export async function putProfileMatch(url: string, match: ProfileMatch): Promise<void> {
+  const all = (await getLocal('profileMatches')) ?? {};
+  const now = Date.now();
+  for (const [k, v] of Object.entries(all)) if (now - v.fetchedAt >= PROFILE_TTL_MS) delete all[k];
+  all[url] = { ...match, fetchedAt: now };
+  await setLocal('profileMatches', all);
 }
 
 export const getDiscover = () => getLocal('discover');

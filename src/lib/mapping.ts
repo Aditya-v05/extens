@@ -78,13 +78,16 @@ export function mapPersona(answers: Record<string, Answer>, profile: Profile): P
   return { chosen: a.choice === NONE_FIT ? null : title(a.choice), confidence: a.confidence, distribution };
 }
 
+/** Reachable people first, then by rank. */
+export const byReachThenRank = (a: Contact, b: Contact) => Number(b.hasEmail) - Number(a.hasEmail) || (b.rank ?? -1) - (a.rank ?? -1);
+
 /** Attach rank scores, then sort: reachable people first, then by rank. */
 export function applyRanks(contacts: Contact[], answers: Record<string, Answer>): Contact[] {
   const ranked = contacts.map((c, i) => {
     const a = answers[rankId(i)];
     return { ...c, rank: a?.type === 'score' ? scoreToPercent(a.score, RANK_LEVELS.length) : null };
   });
-  return ranked.sort((a, b) => Number(b.hasEmail) - Number(a.hasEmail) || (b.rank ?? -1) - (a.rank ?? -1));
+  return ranked.sort(byReachThenRank);
 }
 
 /** Relevant open roles collapse into one "hiring" signal; the rest keep their own relevance. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyReveals, revealable, splitContacts } from './contacts';
+import { applyReveals, revealable, splitContacts, withFocus } from './contacts';
 import type { Contact, LookupResult } from './types';
 
 const c = (id: string, rank: number | null, extra: Partial<Contact> = {}): Contact => ({
@@ -44,5 +44,16 @@ describe('revealable / applyReveals', () => {
     expect(out.contacts!.map((x) => [x.apolloId, x.email ?? null, x.revealedAt ?? null])).toEqual([
       ['a', 'a@x.com', 1], ['b', null, null], ['c', null, 1],
     ]);
+  });
+});
+
+describe('withFocus', () => {
+  it('adds the profile person when missing, and merges what we learned when present', () => {
+    const list = [c('a', 80), c('b', 70)];
+    expect(ids(withFocus(list, c('z', null)))).toEqual(['a', 'b', 'z']);
+    const merged = withFocus(list, c('b', null, { email: 'b@x.com', headline: 'Head of CX' }));
+    expect(ids(merged)).toEqual(['a', 'b']);
+    expect(merged[1]).toMatchObject({ rank: 70, email: 'b@x.com', headline: 'Head of CX' });
+    expect(withFocus(list, undefined)).toBe(list);
   });
 });

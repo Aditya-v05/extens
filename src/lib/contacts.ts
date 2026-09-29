@@ -35,3 +35,12 @@ export function applyReveals(result: LookupResult, reveals: Record<string, Revea
     contacts: result.contacts?.map((c) => (reveals[c.apolloId] ? { ...c, ...reveals[c.apolloId] } : c)) ?? null,
   };
 }
+
+/** Make sure the person from a LinkedIn profile is in the list, keeping what we already know about them. */
+export function withFocus(contacts: Contact[], person: Contact | undefined): Contact[] {
+  if (!person) return contacts;
+  const i = contacts.findIndex((c) => c.apolloId === person.apolloId);
+  if (i < 0) return [...contacts, person];
+  const merged = { ...contacts[i]!, ...person, rank: contacts[i]!.rank ?? person.rank };
+  return contacts.map((c, j) => (j === i ? merged : c));
+}

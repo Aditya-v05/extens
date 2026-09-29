@@ -50,3 +50,8 @@ button.saved:hover { color: var(--text); }
 .persona { margin-top: -6px; }
 
 
+
+/* Opened from a LinkedIn profile: the person first, under the same accent line as the best contact. */
+.profile-card { gap: 8px; padding: 12px 0 20px; border-top: 2px solid var(--accent); border-bottom: 1px solid var(--border); }
+.profile-card .email { gap: 12px; }
+.profile-card .email .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }

@@ -102,6 +102,8 @@ export interface Contact {
   hasEmail: boolean;
   /** 0–100 relevance, from the Jev Score. null until ranked. */
   rank: number | null;
+  /** LinkedIn headline, when known (from a profile match); fuller than the Apollo title. */
+  headline?: string | null;
   email?: string | null;
   emailStatus?: string | null;
   linkedin?: string | null;
@@ -154,6 +156,8 @@ export interface LookupResult {
   contactsFallback?: boolean;
   /** undefined on results cached before "why now" existed. */
   whyNow?: WhyNow | null;
+  /** Set when the lookup started from a LinkedIn profile: which contact is the person on that profile. */
+  profile?: { apolloId: string; url: string };
 }
 
 export type Service = 'apollo' | 'jev';
@@ -172,7 +176,9 @@ export type ViewState =
   | { status: 'needs_setup'; missing: ('keys' | 'profile')[] }
   | { status: 'not_company'; url: string | null }
   | { status: 'not_found'; domain: string }
-  | { status: 'over_budget'; domain: string; spent: number; budget: number; cost: number }
+  /** LinkedIn profile Apollo knows, but without a company to look up. */
+  | { status: 'profile_no_company'; person: Contact }
+  | { status: 'over_budget'; domain: string; spent: number; budget: number; cost: number; profileUrl?: string }
   | { status: 'loading'; domain: string; stage: Stage; partial: LookupResult | null }
   | { status: 'done'; domain: string; result: LookupResult; cached: boolean }
   | { status: 'error'; domain: string; error: LookupError; partial: LookupResult | null };

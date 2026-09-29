@@ -4,8 +4,8 @@ import * as apollo from '@/lib/apollo';
 import { toLookupError, describeError } from '@/lib/errors';
 import * as jev from '@/lib/jev';
 import type { KeyTest, Message } from '@/lib/messages';
-import { refreshBalance, revealContacts, runDiscover, runLookup } from '@/lib/pipeline';
-import { domainFromUrl } from '@/lib/resolver';
+import { refreshBalance, revealContacts, runDiscover, runLookup, runProfileLookup } from '@/lib/pipeline';
+import { domainFromUrl, linkedinProfile } from '@/lib/resolver';
 import { setView } from '@/lib/storage';
 
 export default defineBackground(() => {
@@ -19,7 +19,9 @@ export default defineBackground(() => {
     // Must be called synchronously inside the user gesture.
     browser.sidePanel.open({ windowId });
     const domain = domainFromUrl(tab.url);
+    const profile = domain ? null : linkedinProfile(tab.url);
     if (domain) runLookup(windowId, domain, { tabId: tab.id });
+    else if (profile) runProfileLookup(windowId, profile);
     else setView(windowId, { status: 'not_company', url: tab.url ?? null });
   });
 
@@ -30,7 +32,11 @@ export default defineBackground(() => {
         // The active tab may still hold the activeTab grant (e.g. Refresh); the scan checks its host.
         browser.tabs
           .query({ active: true, windowId: msg.windowId })
-          .then(([tab]) => runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget, tabId: tab?.id }));
+          .then(([tab]) =>
+            msg.profileUrl
+              ? runProfileLookup(msg.windowId, msg.profileUrl, { force: msg.force, allowOverBudget: msg.allowOverBudget })
+              : runLookup(msg.windowId, msg.domain, { force: msg.force, allowOverBudget: msg.allowOverBudget, tabId: tab?.id }),
+          );
         sendResponse({ ok: true });
         return false;
       case 'refreshAccount':

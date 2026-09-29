@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { CreditBar } from '@/components/CreditBar';
 import { ago, pct } from '@/components/format';
-import { ContactPicker } from '@/components/ContactPicker';
+import { ContactPicker, contactName } from '@/components/ContactPicker';
 import { RequirementStrip, StateIcon } from '@/components/Icon';
 import { checkState, checksSummary, upgradeFit } from '@/lib/mapping';
 import { useCredits } from '@/components/useCredits';
 import { lookupCost } from '@/lib/credits';
 import { describeError } from '@/lib/errors';
 import { openAccounts, send } from '@/lib/messages';
-import { normalizeDomainInput } from '@/lib/resolver';
+import { isLinkedin, normalizeDomainInput } from '@/lib/resolver';
 import * as store from '@/lib/storage';
 import type { Check, LookupResult, Signal, ViewState, WhyNow } from '@/lib/types';
 import './panel.css';
@@ -41,8 +41,8 @@ export default function App() {
   const cost = lookupCost(credits.settings);
   const openSettings = () => browser.runtime.openOptionsPage();
 
-  const lookup: Lookup = (domain, force = false, allowOverBudget = false) => {
-    if (windowId !== null) send({ type: 'lookup', windowId, domain, force, allowOverBudget });
+  const lookup: Lookup = (domain, force = false, allowOverBudget = false, profileUrl) => {
+    if (windowId !== null) send({ type: 'lookup', windowId, domain, force, allowOverBudget, profileUrl });
   };
 
   return (
@@ -57,7 +57,7 @@ export default function App() {
   );
 }
 
-type Lookup = (domain: string, force?: boolean, allowOverBudget?: boolean) => void;
+type Lookup = (domain: string, force?: boolean, allowOverBudget?: boolean, profileUrl?: string) => void;
 
 function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: number | null; lookup: Lookup; cost: number }) {
   switch (view.status) {
@@ -77,9 +77,23 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
         </Empty>
       );
     case 'not_company':
-      return (
+      return isLinkedin(view.url) ? (
+        <Empty title="Open a person's profile" body="On LinkedIn, Sift works on people's profiles: it finds who they are, their company's fit, and where they rank. Or type the company's domain.">
+          <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
+        </Empty>
+      ) : (
         <Empty title="This isn't a company website" body="Open a company's site and click the icon again, or type a domain.">
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
+        </Empty>
+      );
+    case 'profile_no_company':
+      return (
+        <Empty title={`Apollo doesn't list a company for ${contactName(view.person)}`} body="Their email is below. Open their company's website to see its fit.">
+          <div className="small">
+            <strong>{contactName(view.person)}</strong>
+            <div className="muted">{view.person.headline ?? view.person.title ?? ''}</div>
+            {view.person.email && <div>{view.person.email}</div>}
+          </div>
         </Empty>
       );
     case 'not_found':
@@ -95,7 +109,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
           body={`Sift has used ${view.spent} of your ${view.budget}-credit budget this month. Looking up ${view.domain} costs ${view.cost} more.`}
         >
           <div className="row">
-            <button className="primary" onClick={() => lookup(view.domain, false, true)}>Look up anyway</button>
+            <button className="primary" onClick={() => lookup(view.domain, false, true, view.profileUrl)}>Look up anyway</button>
             <button onClick={() => browser.runtime.openOptionsPage()}>Change budget</button>
           </div>
         </Empty>
@@ -180,6 +194,8 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
         {!loading && <SaveButton result={result} />}
       </header>
 
+      {result.profile && <ProfileCard result={result} />}
+
       {fit ? <FitCard fit={fit} /> : loading && <SectionSkeleton label="Checking ICP fit" />}
 
       {result.whyNow ? (
@@ -207,10 +223,56 @@ function ResultView({ domain, result, loadingStage, cached, windowId, lookup, co
       {!loading && (
         <div className="row spread small muted">
           <span>{cached ? `Updated ${ago(result.fetchedAt)}` : 'Just updated'}</span>
-          <button className="link small" onClick={() => lookup(domain, true)}>Refresh ({cost} credit{cost === 1 ? '' : 's'})</button>
+          <button className="link small" onClick={() => lookup(domain, true, false, result.profile?.url)}>Refresh ({cost} credit{cost === 1 ? '' : 's'})</button>
         </div>
       )}
     </div>
+  );
+}
+
+/** Opened from a LinkedIn profile: who this is, their email, and where they rank among the people found. */
+function ProfileCard({ result }: { result: LookupResult }) {
+  const [copied, setCopied] = useState(false);
+  const contacts = result.contacts ?? [];
+  const i = contacts.findIndex((c) => c.apolloId === result.profile!.apolloId);
+  const person = contacts[i];
+  if (!person) return null;
+  const name = contactName(person);
+  const copy = async () => {
+    await navigator.clipboard.writeText(`${name} <${person.email}>`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  return (
+    <section className="profile-card stack">
+      <div className="row spread">
+        <h2>On this profile</h2>
+        {person.rank !== null && contacts.length > 1 && (
+          <span className="small muted">Ranks {i + 1} of {contacts.length} here</span>
+        )}
+      </div>
+      <div className="row spread">
+        <div className="grow">
+          <strong>{name}</strong>
+          <div className="small muted">{person.headline ?? person.title ?? 'Unknown title'}</div>
+        </div>
+        {person.rank !== null && (
+          <div className="rank" title={`How likely this person owns the problem: ${person.rank} out of 100`}>
+            <div className="bar"><div style={{ width: `${person.rank}%` }} /></div>
+            <span className="small muted">{person.rank}</span>
+          </div>
+        )}
+      </div>
+      {person.email ? (
+        <div className="row email">
+          <span className="grow">{person.email}</span>
+          {person.emailStatus && <span className={`pill ${person.emailStatus === 'verified' ? 'good' : 'warn'}`}>{person.emailStatus}</span>}
+          <button className="ghost small" onClick={copy}>{copied ? 'Copied' : 'Copy'}</button>
+        </div>
+      ) : (
+        person.revealedAt !== undefined && <div className="small muted">Apollo has no email for this person.</div>
+      )}
+    </section>
   );
 }
 

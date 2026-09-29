@@ -3,7 +3,7 @@ import type { DiscoverOutcome, RevealOutcome } from './pipeline';
 import type { Keys, ViewState } from './types';
 
 export type Message =
-  | { type: 'lookup'; windowId: number; domain: string; force?: boolean; allowOverBudget?: boolean }
+  | { type: 'lookup'; windowId: number; domain: string; force?: boolean; allowOverBudget?: boolean; profileUrl?: string }
   | { type: 'refreshBalance' }
   | { type: 'discover'; more?: boolean; fresh?: boolean; allowOverBudget?: boolean }
   | { type: 'reveal'; windowId: number | null; domain: string; personIds: string[] }

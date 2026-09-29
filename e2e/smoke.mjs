@@ -120,6 +120,33 @@ await panel.click('text=/Reveal all 6 emails \\(6 credits\\)/');
 check(await panel.locator('.confirm').isVisible(), 'reveal all asks first and states the cost');
 await panel.screenshot({ path: `${OUT}/panel-contacts.png`, fullPage: true });
 await panel.click('.confirm >> text=Cancel');
+// LinkedIn: a lookup opened from a profile shows that person first, with where they rank.
+await panel.evaluate(async (result) => {
+  const w = await chrome.windows.getCurrent();
+  await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'done', domain: 'gorgias.com', cached: true,
+    // As in real use, the profile person was revealed by the LinkedIn match.
+    result: { ...result, profile: { apolloId: 'g2', url: 'https://www.linkedin.com/in/tom-reyes' },
+      contacts: result.contacts.map((c) => (c.apolloId === 'g2' ? { ...c, lastName: 'Reyes', headline: 'Head of Support at Gorgias', email: 'tom@gorgias.com', emailStatus: 'verified', revealedAt: Date.now() } : c)) } } });
+}, results['gorgias.com']);
+await panel.reload();
+await panel.waitForSelector('.profile-card');
+check((await panel.locator('.profile-card strong').innerText()) === 'Tom Reyes' && (await panel.locator('.profile-card').innerText()).includes('Ranks 2 of 8'),
+  'a LinkedIn lookup shows the profile person first, with their rank');
+await panel.screenshot({ path: `${OUT}/panel-linkedin.png`, fullPage: true });
+// LinkedIn pages that aren't profiles get their own guidance.
+await panel.evaluate(async () => {
+  const w = await chrome.windows.getCurrent();
+  await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'not_company', url: 'https://www.linkedin.com/feed/' } });
+});
+await panel.reload();
+check(await panel.locator("text=Open a person's profile").count() === 1, 'LinkedIn pages that are not profiles explain what to open');
+// Back to a normal lookup for the checks that follow.
+await panel.evaluate(async (result) => {
+  const w = await chrome.windows.getCurrent();
+  await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'done', domain: 'gorgias.com', result, cached: true } });
+}, results['gorgias.com']);
+await panel.reload();
+await panel.waitForSelector('.score');
 const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
 check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
 const text = await panel.evaluate(() => document.body.innerText);

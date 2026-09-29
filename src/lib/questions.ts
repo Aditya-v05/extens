@@ -79,7 +79,8 @@ export function accountQuestions(profile: Profile): Record<string, Question> {
 }
 
 export function peopleState(contacts: Contact[]) {
-  return contacts.map((c) => ({ title: c.title ?? 'Unknown title' }));
+  // A LinkedIn headline says more than the Apollo title ("Product Operations Lead (Customer Experience & ProdOps)").
+  return contacts.map((c) => ({ title: c.title ?? 'Unknown title', ...(c.headline ? { headline: c.headline } : {}) }));
 }
 
 /** Decision 3: one Score per candidate, batched into one call. */

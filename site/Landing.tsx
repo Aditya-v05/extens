@@ -83,6 +83,7 @@ export default function Landing() {
               <tr><th>Look at it again within 7 days</th><td>Free</td><td>Results are kept in your browser.</td></tr>
               <tr><th>Find the people</th><td>Free</td><td>Apollo's people search costs nothing.</td></tr>
               <tr><th>Reveal an email</th><td>1 credit</td><td>Only charged when Apollo finds the person.</td></tr>
+              <tr><th>Sift a LinkedIn profile</th><td>1 credit</td><td>Identifies the person, email included. Plus the company lookup if it's new. Free again for 30 days.</td></tr>
               <tr><th>Discover lookalikes</th><td>1 credit</td><td>For 50 suggestions.</td></tr>
               <tr><th>Jev judgments</th><td>Well under a cent</td><td>Per lookup, on your TypeSafe key.</td></tr>
             </tbody>
@@ -120,7 +121,11 @@ export default function Landing() {
             </details>
             <details>
               <summary>Does it work on LinkedIn?</summary>
-              <p>Not yet. Sift works on a company's own website.</p>
+              <p>
+                Yes, on people's profiles. Sift sends only the profile's address to Apollo to find out who they are (1 credit, their
+                email included), then shows their company's fit and where they rank among the people there. It never reads
+                LinkedIn's pages.
+              </p>
             </details>
             <details>
               <summary>Can it find phone numbers?</summary>

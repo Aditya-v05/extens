@@ -4,6 +4,29 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — LinkedIn profiles
+
+> "yes build linkedin support"
+
+- **Click Sift on a LinkedIn profile.** It sends only the address to Apollo's `people/match` (`linkedin_url`), which returns the person (title, **LinkedIn headline**, verified email) and their company's domain. The normal lookup then runs on that company, with the person ranked among the others.
+  - Costs 1 credit for the person (their email included), plus the company lookup if it's new.
+  - The match is cached 30 days, so a revisit is free.
+- **Panel:** an **On this profile** block comes first: name, headline, rank bar, "Ranks N of M here", email with Copy. Other LinkedIn pages get "Open a person's profile". A profile with no company shows the person and their email.
+- **Plumbing:**
+  - `linkedinProfile()` / `isLinkedin()` in the resolver; `matchLinkedin()` / `mapProfileMatch()` in the Apollo client.
+  - `runProfileLookup()`, plus a `focus` option on `runLookup`. The lookup message carries `profileUrl` for Refresh and "Look up anyway".
+  - `withFocus()` merges the person into the contacts; `peopleState` passes headlines to Jev.
+  - Cached and saved copies don't keep the profile marker.
+- **No new permissions:** the icon click's `activeTab` already gives the address. LinkedIn's page content is never read. PRIVACY.md, the store listing, the README, Settings' cost note and the landing page (FAQ now "Yes, on people's profiles"; cost row added) are updated.
+- **Tests:**
+  - profile URL parsing (tracking query strings, country subdomains, non-profile pages, look-alike domains);
+  - `mapProfileMatch` on Apollo's real response shape; `withFocus`;
+  - the flow with mocks: first visit 1 credit (email saved, person ranked into the cached company, cache copy unmarked), revisit free, unknown profile, no company, budget.
+  - 123 pass. Smoke adds "On this profile … Ranks 2 of 8" and the LinkedIn guidance.
+- **Live, end to end (3 credits):** Cristina Cordova's profile → Linear lookup in 3.5s; she's #1 of 25 (66), Skyline Lau second, Alexandra third. The revisit was free and instant.
+
+---
+
 ## 2026-09-29 — Finding the owner at small companies (Linear)
 
 User screenshot: Sift on Linear listed "Jon P., Customer Experience" as best contact (3 found), while LinkedIn showed Skyline Lau, *Customer Experience Leader*, and Alexandra, *Product Operations Lead (Customer Experience & ProdOps)*.

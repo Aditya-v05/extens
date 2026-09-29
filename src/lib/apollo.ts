@@ -85,6 +85,46 @@ export async function searchOrganizations(key: string, query: object): Promise<{
   return { organizations, totalEntries: body?.pagination?.total_entries ?? organizations.length };
 }
 
+export interface ProfileMatch {
+  person: Contact;
+  company: { apolloId: string | null; domain: string | null; name: string | null };
+}
+
+/** Map Apollo's people/match response (by LinkedIn URL) to a revealed contact and their company. */
+export function mapProfileMatch(body: any, now = Date.now()): ProfileMatch | null {
+  const p = body?.person;
+  if (!p?.id) return null;
+  const o = p.organization ?? {};
+  const domain = (o.primary_domain ?? p.email_domain ?? '').toLowerCase() || null;
+  return {
+    person: {
+      apolloId: p.id,
+      firstName: p.first_name ?? '',
+      lastName: p.last_name ?? null,
+      lastNameObfuscated: null,
+      title: p.title ?? null,
+      headline: p.headline ?? null,
+      hasEmail: !!p.email,
+      rank: null,
+      email: p.email ?? null,
+      emailStatus: p.email_status ?? null,
+      linkedin: p.linkedin_url ?? null,
+      revealedAt: now,
+    },
+    company: { apolloId: p.organization_id ?? o.id ?? null, domain, name: o.name ?? null },
+  };
+}
+
+/** Who is on this LinkedIn profile, and where do they work? People enrichment: 1 credit when found. */
+export async function matchLinkedin(key: string, linkedinUrl: string): Promise<ProfileMatch | null> {
+  const body = await request('apollo', `${BASE}/people/match`, {
+    method: 'POST',
+    headers: headers(key),
+    body: JSON.stringify({ linkedin_url: linkedinUrl, reveal_personal_emails: false, reveal_phone_number: false }),
+  });
+  return mapProfileMatch(body);
+}
+
 export interface PeopleQuery {
   organizationId: string;
   titles?: string[];

@@ -23,10 +23,15 @@ Sift talks to exactly two services, using **your own** API keys:
 
 | Service | When | What is sent |
 |---|---|---|
-| **Apollo** (`api.apollo.io`) | when you look up a company, reveal an email, use Discover, or check your credit balance | the company's domain or Apollo ID, the people or companies to look up, your search filters |
+| **Apollo** (`api.apollo.io`) | when you look up a company, reveal an email, use Discover, check your credit balance, or click Sift on a LinkedIn profile | the company's domain or Apollo ID, the people or companies to look up, your search filters, and the address of the LinkedIn profile you clicked on |
 | **TypeSafe** (`api.typesafe.ai`), the Jev model | during a lookup | your profile text, the company's public details from Apollo, public job titles, and short public text snippets from the company's own website |
 
 Their handling of that data is governed by their own privacy policies and your agreements with them.
+
+## LinkedIn
+
+On a LinkedIn profile, Sift uses only the page's address: it sends it to Apollo to find out who the person is and where they
+work. It does not read, copy or store anything from LinkedIn's pages.
 
 ## Website access
 

@@ -321,7 +321,8 @@ function CreditsSection() {
       <h2>Apollo credits</h2>
       <p className="small muted" style={{ margin: 0 }}>
         A new company lookup costs {lookupCost(settings)} Apollo credit{lookupCost(settings) === 1 ? '' : 's'}: 1 for the company
-        {settings.fetchJobs ? ', 1 for job postings' : ''}. People search is free. Revealing an email costs 1.
+        {settings.fetchJobs ? ', 1 for job postings' : ''}. People search is free. Revealing an email costs 1. On a LinkedIn
+        profile, identifying the person costs 1 (their email comes with it).
         Repeat visits use the 7-day cache and cost nothing.
       </p>
 

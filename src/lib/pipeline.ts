@@ -5,11 +5,11 @@ import {
   buildLookalikeQuery, filtersLabel, mapCandidate, mergeCandidates, pickSeeds, searchKey,
   type Candidate, type DiscoverResult,
 } from './discover';
-import { applyReveals, type RevealPatch } from './contacts';
+import { applyReveals, withFocus, type RevealPatch } from './contacts';
 import { MAX_PEOPLE, SENIOR, excludeByTitle, interleave, mergePeople, peopleFilters, type PeopleFilters } from './people';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
-import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
+import { applyRanks, byReachThenRank, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
 import type { Answer } from './jev';
 import {
   ROLE_BATCH, accountQuestions, companyState, jobId, peopleState, rankId, rankQuestions, roleQuestions, sellerState,
@@ -37,6 +37,8 @@ export interface LookupOptions {
   allowOverBudget?: boolean;
   /** Tab showing the company's site, for website signals (needs the activeTab grant from an icon click). */
   tabId?: number;
+  /** The lookup started from a LinkedIn profile: this person is ranked with the others and highlighted. */
+  focus?: { person: Contact; url: string };
 }
 
 /**
@@ -44,7 +46,7 @@ export interface LookupOptions {
  * (My Accounts refresh) it runs headless. Returns the final state either way.
  */
 export async function runLookup(windowId: number | null, domain: string, opts: LookupOptions = {}): Promise<ViewState> {
-  const { force = false, allowOverBudget = false, tabId } = opts;
+  const { force = false, allowOverBudget = false, tabId, focus } = opts;
   const token = Symbol(domain);
   if (windowId !== null) runs.set(windowId, token);
   const show = async (v: ViewState): Promise<ViewState> => {
@@ -61,8 +63,17 @@ export async function runLookup(windowId: number | null, domain: string, opts: L
   if (!force) {
     const hit = await store.getCached(domain);
     if (hit) {
-      const contacts = hit.contacts ? await store.withReveals(hit.contacts) : null;
-      return show({ status: 'done', domain, result: upgradeResult({ ...hit, contacts }), cached: true });
+      let result = hit;
+      // Came from a LinkedIn profile whose person isn't in this cached list yet: rank just them and add them.
+      if (focus && !hit.contacts?.some((c) => c.apolloId === focus.person.apolloId)) {
+        const state = { seller: sellerState(profile!), company: companyState(hit.company), best_persona: hit.persona?.chosen ?? null };
+        const [ranked] = applyRanks([focus.person], await rankPeople(keys!.typesafe, state, [focus.person]));
+        result = { ...hit, contacts: [...(hit.contacts ?? []), ranked!].sort(byReachThenRank) };
+        await store.putCached(result);
+      }
+      const contacts = result.contacts ? await store.withReveals(withFocus(result.contacts, focus?.person)) : null;
+      const shown = { ...result, contacts, ...(focus ? { profile: { apolloId: focus.person.apolloId, url: focus.url } } : {}) };
+      return show({ status: 'done', domain, result: upgradeResult(shown), cached: true });
     }
   }
 
@@ -78,15 +89,16 @@ export async function runLookup(windowId: number | null, domain: string, opts: L
     // Reading the site is free and independent of Apollo, so it starts right away.
     const site: Promise<SiteScan | null> =
       settings.scanSite && tabId !== undefined ? scanTab(tabId, domain) : Promise.resolve(null);
-    partial = await lookup(keys!, profile!, settings, domain, site, async (stage, p) => {
+    partial = await lookup(keys!, profile!, settings, domain, site, focus?.person, async (stage, p) => {
       partial = p;
       await show({ status: 'loading', domain, stage, partial: p });
     });
     if (!partial) return show({ status: 'not_found', domain });
+    // The cached and saved copies don't remember which profile this came from.
     await store.putCached(partial);
-    // A saved account follows its latest lookup (status and notes live separately).
     if ((await store.getSaved())[domain]) await store.saveAccount(partial);
-    return await show({ status: 'done', domain, result: partial, cached: false });
+    const shown = focus ? { ...partial, profile: { apolloId: focus.person.apolloId, url: focus.url } } : partial;
+    return await show({ status: 'done', domain, result: shown, cached: false });
   } catch (err) {
     return await show({ status: 'error', domain, error: toLookupError(err), partial });
   } finally {
@@ -97,7 +109,8 @@ export async function runLookup(windowId: number | null, domain: string, opts: L
 type Progress = (stage: 'judging' | 'ranking', partial: LookupResult) => Promise<void>;
 
 async function lookup(
-  keys: Keys, profile: Profile, settings: Settings, domain: string, site: Promise<SiteScan | null>, progress: Progress,
+  keys: Keys, profile: Profile, settings: Settings, domain: string, site: Promise<SiteScan | null>,
+  focusPerson: Contact | undefined, progress: Progress,
 ): Promise<LookupResult | null> {
   const org = await apollo.enrichOrganization(keys.apollo, domain);
   if (!org) return null;
@@ -117,11 +130,12 @@ async function lookup(
   ]);
   const jobsStatus: WhyNow['jobsStatus'] = postings === 'off' ? 'off' : postings === null ? 'unavailable' : 'ok';
   const persona = mapPersona(answers, profile);
+  const people = withFocus(found.contacts, focusPerson);
   result = {
     ...result,
     fit: mapFit(answers, profile, evaluateRules(profile.rules, company)),
     persona,
-    contacts: found.contacts,
+    contacts: people,
     contactsFallback: found.fallback,
   };
   await progress('ranking', result);
@@ -134,10 +148,10 @@ async function lookup(
   const snippets = scan ? freshSnippets(scan.snippets, now) : [];
   const siteStatus: NonNullable<WhyNow['siteStatus']> = !settings.scanSite ? 'off' : scan ? 'ok' : 'unavailable';
   const [contacts, whyNow] = await Promise.all([
-    found.contacts.length
-      ? rankPeople(keys.typesafe, { ...state, best_persona: persona?.chosen ?? null }, found.contacts)
-          .then((rankAnswers) => store.withReveals(applyRanks(found.contacts, rankAnswers)))
-      : Promise.resolve(found.contacts),
+    people.length
+      ? rankPeople(keys.typesafe, { ...state, best_persona: persona?.chosen ?? null }, people)
+          .then((rankAnswers) => store.withReveals(applyRanks(people, rankAnswers)))
+      : Promise.resolve(people),
     signals.length || jobs.length || snippets.length
       ? judgeWhyNow(keys.typesafe, state, signals, jobs, snippets).then((a) =>
           mapWhyNow(a, signals, jobs, jobsStatus, { snippets, status: siteStatus }),
@@ -272,6 +286,58 @@ export async function rankPeople(key: string, state: object, contacts: Contact[]
     }
   });
   return answers;
+}
+
+// ---------- LinkedIn profiles ----------
+
+/**
+ * Sift on a LinkedIn profile: Apollo identifies the person from the profile's address (1 credit, and
+ * their email comes with it), then the normal lookup runs on their company with them ranked among
+ * the others. Only the address is used; LinkedIn pages are never read. Matches are kept 30 days.
+ */
+export async function runProfileLookup(windowId: number | null, url: string, opts: LookupOptions = {}): Promise<ViewState> {
+  const token = Symbol(url);
+  if (windowId !== null) runs.set(windowId, token);
+  const show = async (v: ViewState): Promise<ViewState> => {
+    if (windowId !== null && runs.get(windowId) === token) await store.setView(windowId, v);
+    return v;
+  };
+  const label = url.replace(/^https:\/\/www\./, '');
+
+  const [keys, profile] = await Promise.all([store.getKeys(), store.getProfile()]);
+  const missing: ('keys' | 'profile')[] = [];
+  if (!keys?.apollo || !keys?.typesafe) missing.push('keys');
+  if (!profile) missing.push('profile');
+  if (missing.length) return show({ status: 'needs_setup', missing });
+
+  let match = opts.force ? null : await store.getProfileMatch(url);
+  if (!match) {
+    const [settings, ledger] = await Promise.all([store.getSettings(), store.getLedger()]);
+    // Worst case: the profile match, then a company that isn't cached yet.
+    const cost = 1 + lookupCost(settings);
+    if (!opts.allowOverBudget && overBudget(ledger, settings, cost)) {
+      return show({ status: 'over_budget', domain: label, spent: totalSpent(ledger), budget: settings.monthlyBudget!, cost, profileUrl: url });
+    }
+    await show({ status: 'loading', domain: label, stage: 'company', partial: null });
+    try {
+      match = await apollo.matchLinkedin(keys!.apollo, url);
+    } catch (err) {
+      return show({ status: 'error', domain: label, error: toLookupError(err), partial: null });
+    }
+    if (!match) return show({ status: 'not_found', domain: label });
+    await store.recordSpend('reveal'); // people enrichment, charged because Apollo found them
+    const { person } = match;
+    await store.putReveals({
+      [person.apolloId]: {
+        lastName: person.lastName ?? null, email: person.email ?? null, emailStatus: person.emailStatus ?? null,
+        linkedin: person.linkedin ?? null, revealedAt: person.revealedAt ?? Date.now(), ...(person.title ? { title: person.title } : {}),
+      },
+    });
+    await store.putProfileMatch(url, match);
+    refreshBalance();
+  }
+  if (!match.company.domain) return show({ status: 'profile_no_company', person: match.person });
+  return runLookup(windowId, match.company.domain, { ...opts, focus: { person: match.person, url } });
 }
 
 // ---------- reveal ----------
