@@ -31,6 +31,7 @@ await page.evaluate(async ({ results, saved, accountMeta }) => {
 }, { results, saved, accountMeta });
 await page.reload();
 await page.waitForSelector('.account');
+check((await page.title()) === 'My Accounts – Sift', 'pages are named Sift');
 await page.screenshot({ path: `${OUT}/accounts.png`, fullPage: true });
 
 // Expand Gorgias and check interactions: status change, note, search, tabs.
@@ -74,6 +75,15 @@ for (const domain of ['gorgias.com', 'linear.app']) {
   await panel.click('text=/less relevant/').catch(() => {});
   await panel.screenshot({ path: `${OUT}/panel-${domain.split('.')[0]}.png`, fullPage: true });
 }
+// Contacts: one at a time, the rest behind a dropdown (panel is on linear.app, 2 contacts).
+const gate = panel.locator('text=/contacts? anyway/');
+if (await gate.count()) await gate.click(); // low fits hide contacts behind a link
+check((await panel.locator('.contact').count()) === 1, 'panel shows one contact at a time');
+const options = await panel.locator('select[aria-label="Choose a contact"] option').allInnerTexts();
+check(options.length === 2 && options[0].startsWith('Erin F.'), `contact dropdown lists everyone, best first (${options.join(' | ')})`);
+await panel.selectOption('select[aria-label="Choose a contact"]', { index: 1 });
+check((await panel.locator('.contact strong').innerText()) === 'Cristina Cordova', 'choosing a contact shows them');
+await panel.screenshot({ path: `${OUT}/panel-contact-picked.png`, fullPage: true });
 const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
 check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
 const text = await panel.evaluate(() => document.body.innerText);

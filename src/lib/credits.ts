@@ -6,7 +6,7 @@
 
 export type SpendKind = 'company' | 'jobs' | 'reveal';
 
-/** What ICP Scout itself has spent this calendar month (local time). */
+/** What Sift itself has spent this calendar month (local time). */
 export interface Ledger {
   month: string;
   company: number;
@@ -15,7 +15,7 @@ export interface Ledger {
 }
 
 export interface Settings {
-  /** Monthly cap on credits ICP Scout may spend; null = no cap. */
+  /** Monthly cap on credits Sift may spend; null = no cap. */
   monthlyBudget: number | null;
   /** Fetch job postings for "why now" (1 extra credit per lookup). */
   fetchJobs: boolean;

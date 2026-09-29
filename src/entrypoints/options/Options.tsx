@@ -12,7 +12,7 @@ export default function Options() {
   return (
     <main className="options stack">
       <header>
-        <h1>ICP Scout</h1>
+        <h1>Sift</h1>
         <p className="muted">
           Everything stays in this browser. Your keys are sent only to Apollo and TypeSafe. There's no server and no tracking.
         </p>
@@ -280,7 +280,7 @@ function CreditsSection() {
       </p>
 
       <div>
-        <label>Spent by ICP Scout this month</label>
+        <label>Spent by Sift this month</label>
         <div>
           <strong>{totalSpent(ledger)}</strong>
           <span className="muted small">
@@ -298,14 +298,14 @@ function CreditsSection() {
           </div>
         ) : (
           <div className="small muted">
-            Your Apollo team balance shows here if your key is a <strong>master API key</strong>. Other keys can't read it, so ICP Scout counts its own spending instead.
+            Your Apollo team balance shows here if your key is a <strong>master API key</strong>. Other keys can't read it, so Sift counts its own spending instead.
           </div>
         )}
         <button className="ghost small" disabled={checking} onClick={check}>{checking ? 'Checking…' : 'Check balance now'}</button>
       </div>
 
       <div>
-        <label>Monthly budget for ICP Scout</label>
+        <label>Monthly budget for Sift</label>
         <div className="row">
           <input
             type="number"

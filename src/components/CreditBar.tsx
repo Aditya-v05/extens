@@ -14,7 +14,7 @@ function Bar({ used, of }: { used: number; of: number }) {
 }
 
 /**
- * Apollo's real balance when the key can read it (master keys); otherwise what ICP Scout
+ * Apollo's real balance when the key can read it (master keys); otherwise what Sift
  * has spent this month, against the user's budget if they set one.
  */
 export function CreditBar({ credits, onSettings }: { credits: CreditState; onSettings: () => void }) {
@@ -32,7 +32,7 @@ export function CreditBar({ credits, onSettings }: { credits: CreditState; onSet
         </div>
         <Bar used={balance.consumed} of={balance.limit} />
         <div className="small muted">
-          ICP Scout used {fmt(spent)} this month{budget !== null && `, budget ${fmt(budget)}`}
+          Sift used {fmt(spent)} this month{budget !== null && `, budget ${fmt(budget)}`}
         </div>
       </div>
     );

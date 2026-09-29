@@ -1,13 +1,13 @@
-# ICP Scout
+# Sift
 
-> Working name.
+<img src="public/icon/128.png" width="64" alt="Sift">
 
 An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon, and a side panel tells you:
 
 1. **Does this company fit my ICP?** A fit score driven mostly by your own requirements (met / near miss / unsure / not met), with Jev's overall judgment as a smaller part.
 2. **Why now?** Hiring for roles your product serves, headcount growth, recent funding, plus what the company's own site says: enterprise plans, SOC 2, AI launches, acquisitions, new executives. Each signal links to its source; website signals quote the page word for word.
 3. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
-4. **Their email**, revealed on click.
+4. **Their email**, revealed on click. Contacts are ranked and picked from a dropdown, one at a time.
 
 **My Accounts** (from the panel footer or Settings) is a full-page list of saved and recently viewed companies. It's ranked by priority (60% fit + 40% timing), with a status (New / Contacted / Replied / Not a fit), notes, search, a "Hot only" filter, per-account refresh, and CSV export.
 
@@ -33,7 +33,7 @@ Per [Apollo's API pricing](https://docs.apollo.io/docs/api-pricing):
 
 Results are cached per domain for 7 days, so revisits are free. Revealed emails are kept for good.
 
-The side panel shows a **credit bar**. With an Apollo *master* API key it shows your team's real balance. Other keys can't read the balance, so ICP Scout counts its own spending this month instead. You can set a **monthly budget**: once it's reached, new lookups ask before spending.
+The side panel shows a **credit bar**. With an Apollo *master* API key it shows your team's real balance. Other keys can't read the balance, so Sift counts its own spending this month instead. You can set a **monthly budget**: once it's reached, new lookups ask before spending.
 
 ## Install (from source)
 

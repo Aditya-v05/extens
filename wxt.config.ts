@@ -4,11 +4,11 @@ export default defineConfig({
   srcDir: 'src',
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'ICP Scout',
+    name: 'Sift',
     description:
-      "ICP fit, the best contact and their email for the company website you're on. Bring your own Apollo + Jev keys.",
+      "Sift the company website you're on: ICP fit, why now, the best contact and their email. Bring your own Apollo + Jev keys.",
     permissions: ['activeTab', 'scripting', 'sidePanel', 'storage'],
     host_permissions: ['https://api.apollo.io/*', 'https://api.typesafe.ai/*'],
-    action: { default_title: 'Scout this company' },
+    action: { default_title: 'Sift this company' },
   },
 });

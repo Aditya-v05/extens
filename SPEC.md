@@ -1,6 +1,6 @@
 # v1 Spec — ICP Browser Extension
 
-> Working name: ICP Scout. Open source (MIT). Status: v1 built, 2026-09-29.
+> Name: Sift (formerly "Sift"). Open source (MIT). Status: v1 built, 2026-09-29.
 
 ## 1. What it is
 
@@ -62,7 +62,7 @@ Phone numbers · automated outbound · email/opener generation · sequences · C
    - Company header (name, logo, size, industry) appears first
    - Fit score and checklist
    - Recommended persona and ranked contacts
-4. Each contact has a **Reveal email (1 credit)** button.
+4. Contacts appear **one at a time**. The best-ranked contact is shown first; everyone else is in a dropdown ("Name, Title", with "(email ready)" or "(no email)"). The shown contact has **Reveal email (1 credit)**. The same picker (`src/components/ContactPicker.tsx`) is used in My Accounts.
 
 ### 4.3 Reveal, save, export
 - **Reveal:** calls Apollo's enrichment for that one person. The email and its status (verified/guessed) are cached with the contact.
@@ -248,7 +248,7 @@ saved:     { [domain]: ResultObject & { savedAt } }
 accountMeta: { [domain]: { status, note, updatedAt } }   // survives refresh / unsave
 reveals:   { [apolloPersonId]: { email, status, revealedAt } }
 settings:  { monthlyBudget: number | null, fetchJobs: boolean, scanSite: boolean }
-credits:   { month: "YYYY-MM", company, jobs, reveal }   // spent by ICP Scout
+credits:   { month: "YYYY-MM", company, jobs, reveal }   // spent by Sift
 balance:   Apollo lead-credit balance (master keys) or { available: false }
 ```
 

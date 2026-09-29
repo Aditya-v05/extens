@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { browser } from 'wxt/browser';
+import { ContactPicker, contactName } from '@/components/ContactPicker';
 import { CreditBar } from '@/components/CreditBar';
 import { ago, pct } from '@/components/format';
 import { StateIcon } from '@/components/Icon';
@@ -14,7 +15,6 @@ import { toCsv } from '@/lib/csv';
 import { describeError } from '@/lib/errors';
 import { send } from '@/lib/messages';
 import * as store from '@/lib/storage';
-import type { Contact, LookupError } from '@/lib/types';
 import './accounts.css';
 
 type Tab = 'saved' | 'recent';
@@ -50,7 +50,7 @@ export default function Accounts() {
     const blob = new Blob([toCsv(list, meta)], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `icp-scout-accounts-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `sift-accounts-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -129,7 +129,7 @@ function EmptyState({ tab, filtered }: { tab: Tab; filtered: boolean }) {
   ) : (
     <div className="card empty">
       <h2>Nothing viewed in the last 7 days</h2>
-      <p className="muted">Open a company's website and click the ICP Scout icon.</p>
+      <p className="muted">Open a company's website and click the Sift icon.</p>
     </div>
   );
 }
@@ -242,13 +242,13 @@ function AccountRowView({ row, cost }: { row: AccountRow; cost: number }) {
   );
 }
 
-function contactName(c: Contact) {
-  return `${c.firstName} ${c.lastName ?? (c.lastNameObfuscated ? `${c.lastNameObfuscated[0]}.` : '')}`.trim();
-}
-
 function AccountDetails({ row }: { row: AccountRow }) {
   const r = row.result;
   const [note, setNote] = useState(row.meta.note);
+  const reveal = async (personId: string) => {
+    const res = await send({ type: 'reveal', windowId: null, domain: row.domain, personId });
+    return res.ok ? null : res.error;
+  };
   useEffect(() => setNote(row.meta.note), [row.meta.note]);
 
   return (
@@ -286,9 +286,8 @@ function AccountDetails({ row }: { row: AccountRow }) {
       </section>
 
       <section>
-        <h2>Contacts</h2>
         {r.contacts?.length ? (
-          <ul className="plain">{r.contacts.slice(0, 6).map((c) => <ContactLine key={c.apolloId} contact={c} domain={row.domain} />)}</ul>
+          <ContactPicker contacts={r.contacts} reveal={reveal} />
         ) : <p className="muted small">No contacts found.</p>}
       </section>
 
@@ -310,36 +309,5 @@ function AccountDetails({ row }: { row: AccountRow }) {
         {r.company.linkedin && <>{'   '}<a href={r.company.linkedin} target="_blank" rel="noreferrer" style={{ marginLeft: 16 }}>LinkedIn</a></>}
       </p>
     </div>
-  );
-}
-
-function ContactLine({ contact: c, domain }: { contact: Contact; domain: string }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<LookupError | null>(null);
-  const reveal = async () => {
-    setBusy(true);
-    setError(null);
-    const res = await send({ type: 'reveal', windowId: null, domain, personId: c.apolloId });
-    if (!res.ok) setError(res.error);
-    setBusy(false);
-  };
-  return (
-    <li className="contact-line small">
-      <span className="grow">
-        <strong>{contactName(c)}</strong>
-        <span className="muted block">
-          {c.title ?? 'Unknown title'}
-          {c.rank !== null && <span title="How likely this person owns the problem">, rank {c.rank}</span>}
-        </span>
-      </span>
-      {c.revealedAt !== undefined ? (
-        c.email ? <code>{c.email}</code> : <span className="muted">No email</span>
-      ) : c.hasEmail ? (
-        <button className="small" disabled={busy} onClick={reveal}>{busy ? 'Revealing…' : 'Reveal (1 cr)'}</button>
-      ) : (
-        <span className="muted">No email in Apollo</span>
-      )}
-      {error && <span className="err">{describeError(error)}</span>}
-    </li>
   );
 }

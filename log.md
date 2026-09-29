@@ -4,6 +4,25 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Renamed to Sift; contacts dropdown; icon
+
+> "all the emails getting listed like this is not efficient a drop down is good … lets rename it to sift … the icon as well"
+
+- **Name:** ICP Scout → **Sift**: manifest (`Sift`, action title "Sift this company"), page titles, UI copy, README, SPEC, LICENSE, package name, and the CSV file name (`sift-accounts-<date>.csv`). Earlier log entries keep the old name as history. The GitHub repo is still `extens`.
+- **Icon:** from the user's design, exported to `public/icon/{16,32,48,96,128}.png`, which WXT adds to the manifest.
+  - The off-white rounded square is kept so the navy mark stays visible on dark Chrome toolbars (the user's theme is dark); the corners outside the square are transparent.
+  - 16px and 32px are redrawn with the mark filling more of the square so it stays legible.
+  - The README shows the icon.
+- **Contacts:** one at a time instead of a stack of cards.
+  - New `ContactPicker` shows the selected person (name, title, rank, email or *Reveal email (1 credit)*, LinkedIn) under an accent line.
+  - A dropdown lists everyone in rank order, marked "(email ready)" or "(no email)", with "1 of N" beside the heading.
+  - A new lookup resets to the best match.
+  - Used in both the side panel and My Accounts (which previously listed the top 6).
+- **Cleanup:** the contact-card code in the panel and the contact list in My Accounts are gone; the picker's styles moved to the shared stylesheet so both pages get them.
+- **Smoke test:** new checks that pages are named Sift, the panel shows one contact at a time, the dropdown lists everyone best first, and choosing someone shows them. 15/15 pass.
+
+---
+
 ## 2026-09-29 — Lines only, no boxes
 
 > "lets not have boxes at all just use lines"

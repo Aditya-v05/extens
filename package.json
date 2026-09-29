@@ -1,5 +1,5 @@
 {
-  "name": "icp-scout",
+  "name": "sift",
   "description": "Open-source Chrome extension: ICP fit, best contact and email for the company website you're on. Bring your own Apollo + Jev keys.",
   "version": "0.1.0",
   "private": true,

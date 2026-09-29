@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { CreditBar } from '@/components/CreditBar';
 import { ago, pct } from '@/components/format';
+import { ContactPicker } from '@/components/ContactPicker';
 import { RequirementStrip, StateIcon } from '@/components/Icon';
 import { checkState, checksSummary, upgradeFit } from '@/lib/mapping';
 import { useCredits } from '@/components/useCredits';
@@ -10,7 +11,7 @@ import { describeError } from '@/lib/errors';
 import { openAccounts, send } from '@/lib/messages';
 import { normalizeDomainInput } from '@/lib/resolver';
 import * as store from '@/lib/storage';
-import type { Check, Contact, LookupError, LookupResult, Signal, ViewState, WhyNow } from '@/lib/types';
+import type { Check, LookupResult, Signal, ViewState, WhyNow } from '@/lib/types';
 import './panel.css';
 
 const LOW_FIT = 40;
@@ -56,7 +57,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
   switch (view.status) {
     case 'idle':
       return (
-        <Empty title="Open a company's website" body="Then click the ICP Scout icon in your toolbar.">
+        <Empty title="Open a company's website" body="Then click the Sift icon in your toolbar.">
           <DomainInput onSubmit={(d) => lookup(d)} cost={cost} />
         </Empty>
       );
@@ -85,7 +86,7 @@ function Body({ view, windowId, lookup, cost }: { view: ViewState; windowId: num
       return (
         <Empty
           title="Monthly credit budget reached"
-          body={`ICP Scout has used ${view.spent} of your ${view.budget}-credit budget this month. Looking up ${view.domain} costs ${view.cost} more.`}
+          body={`Sift has used ${view.spent} of your ${view.budget}-credit budget this month. Looking up ${view.domain} costs ${view.cost} more.`}
         >
           <div className="row">
             <button className="primary" onClick={() => lookup(view.domain, false, true)}>Look up anyway</button>
@@ -368,87 +369,18 @@ function Contacts({ result, ranking, windowId, lowFit }: { result: LookupResult;
   if (!contacts.length) {
     return <div className="notice">No contacts found at this company in Apollo.</div>;
   }
-  const [best, ...rest] = contacts;
+  const reveal = async (personId: string) => {
+    if (windowId === null) return null;
+    const res = await send({ type: 'reveal', windowId, domain: result.domain, personId });
+    return res.ok ? null : res.error;
+  };
   return (
     <section className="stack contacts">
       {result.contactsFallback && (
         <div className="notice small">No one matched your persona titles, so these are senior people instead.</div>
       )}
-      <h2>{ranking ? 'Ranking contacts…' : 'Best contact'}</h2>
-      <ContactCard contact={best!} domain={result.domain} windowId={windowId} featured />
-      {rest.length > 0 && (
-        <>
-          <h2>Other contacts</h2>
-          {rest.map((c) => <ContactCard key={c.apolloId} contact={c} domain={result.domain} windowId={windowId} />)}
-        </>
-      )}
+      {ranking ? <p className="small muted">Ranking contacts…</p> : <ContactPicker contacts={contacts} reveal={reveal} />}
     </section>
-  );
-}
-
-function ContactCard({ contact: c, domain, windowId, featured }: { contact: Contact; domain: string; windowId: number | null; featured?: boolean }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<LookupError | null>(null);
-  const [copied, setCopied] = useState(false);
-  const revealed = c.revealedAt !== undefined;
-  const name = `${c.firstName} ${c.lastName ?? (c.lastNameObfuscated ? `${c.lastNameObfuscated[0]}.` : '')}`.trim();
-
-  const reveal = async () => {
-    if (windowId === null) return;
-    setBusy(true);
-    setError(null);
-    const res = await send({ type: 'reveal', windowId, domain, personId: c.apolloId });
-    if (!res.ok) setError(res.error);
-    setBusy(false);
-  };
-
-  const copy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
-  };
-
-  return (
-    <div className={`contact card ${featured ? 'featured' : ''}`}>
-      <div className="row spread">
-        <div className="grow">
-          <div className="row">
-            <strong>{name}</strong>
-            {c.linkedin && <a href={c.linkedin} target="_blank" rel="noreferrer" className="small">LinkedIn</a>}
-          </div>
-          <div className="small muted">{c.title ?? 'Unknown title'}</div>
-        </div>
-        {c.rank !== null && <RankMeter value={c.rank} />}
-      </div>
-
-      {revealed ? (
-        c.email ? (
-          <div className="row email">
-            <code className="grow">{c.email}</code>
-            {c.emailStatus && <span className={`pill ${c.emailStatus === 'verified' ? 'good' : 'warn'}`}>{c.emailStatus}</span>}
-            <button className="ghost small" onClick={() => copy(`${name} <${c.email}>`)}>{copied ? 'Copied' : 'Copy'}</button>
-          </div>
-        ) : (
-          <div className="small muted">Apollo has no email for this person.</div>
-        )
-      ) : c.hasEmail ? (
-        <button className={featured ? 'primary' : ''} disabled={busy} onClick={reveal}>
-          {busy ? 'Revealing…' : 'Reveal email (1 credit)'}
-        </button>
-      ) : (
-        <div className="small muted">No email in Apollo</div>
-      )}
-      {error && <div className="notice error small">{describeError(error)}</div>}
-    </div>
-  );
-}
-
-function RankMeter({ value }: { value: number }) {
-  return (
-    <div className="rank" title={`Likelihood this person owns the problem: ${value}%`}>
-      <div className="bar"><div style={{ width: `${value}%` }} /></div>
-      <span className="small muted">{value}</span>
-    </div>
   );
 }
 
