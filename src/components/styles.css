@@ -139,12 +139,18 @@ label { display: block; font-weight: 500; margin-bottom: 2px; }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width: auto; }
 code { font: 500 1em/1.4 'Schibsted Grotesk Variable', sans-serif; }
 
-/* Contact picker (side panel and My Accounts): one person at a time, the rest in a dropdown. */
-.picker select { width: 100%; }
+/* Contacts (side panel and My Accounts): the best up front, the rest expand inside the panel. */
 .contact { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 2px solid var(--accent); }
 .contact > button, .contact > a { align-self: flex-start; }
 .contact .email { gap: 12px; }
 .contact .email .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.contact.compact { flex-direction: row; align-items: flex-start; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border); }
+.contact.compact .name-line { font-weight: 500; }
+.contact.compact .side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; white-space: nowrap; }
+.contact.compact .email { margin-top: 2px; }
+.more { list-style: none; margin: -4px 0 0; padding: 0; }
+.more > li:last-child .contact { border-bottom: 1px solid var(--border); }
+.confirm { border-left: 2px solid var(--accent); padding-left: 12px; gap: 8px; }
 .rank { display: flex; align-items: center; gap: 6px; }
 .rank .bar { width: 44px; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
 .rank .bar > div { height: 100%; background: var(--accent); }

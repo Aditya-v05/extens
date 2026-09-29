@@ -7,7 +7,7 @@ An open-source Chrome extension for anyone doing outbound. Open a company's webs
 1. **Does this company fit my ICP?** A fit score driven mostly by your own requirements (met / near miss / unsure / not met), with Jev's overall judgment as a smaller part.
 2. **Why now?** Hiring for roles your product serves, headcount growth, recent funding, plus what the company's own site says: enterprise plans, SOC 2, AI launches, acquisitions, new executives. Each signal links to its source; website signals quote the page word for word.
 3. **Who should I talk to?** People at the company, ranked by how likely they are to own the problem you solve.
-4. **Their email**, revealed on click. Contacts are ranked and picked from a dropdown, one at a time.
+4. **Their email**, revealed on click, or all at once with *Reveal all* (it shows the credit cost first). The best contacts are shown up front (two if two are nearly as good); the rest are one click away.
 
 **My Accounts** (from the panel footer or Settings) is a full-page list of saved and recently viewed companies. It's ranked by priority (60% fit + 40% timing), with a status (New / Contacted / Replied / Not a fit), notes, search, a "Hot only" filter, per-account refresh, and CSV export.
 

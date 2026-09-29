@@ -1,10 +1,11 @@
 import { browser } from 'wxt/browser';
-import type { Keys, LookupError, ViewState } from './types';
+import type { RevealOutcome } from './pipeline';
+import type { Keys, ViewState } from './types';
 
 export type Message =
   | { type: 'lookup'; windowId: number; domain: string; force?: boolean; allowOverBudget?: boolean }
   | { type: 'refreshBalance' }
-  | { type: 'reveal'; windowId: number | null; domain: string; personId: string }
+  | { type: 'reveal'; windowId: number | null; domain: string; personIds: string[] }
   | { type: 'refreshAccount'; domain: string; allowOverBudget?: boolean }
   | { type: 'testKeys'; keys: Keys };
 
@@ -17,7 +18,7 @@ export type Reply<M extends Message> = M extends { type: 'lookup' }
   : M extends { type: 'refreshAccount' }
     ? ViewState
   : M extends { type: 'reveal' }
-    ? { ok: true } | { ok: false; error: LookupError }
+    ? RevealOutcome
     : { apollo: KeyTest; typesafe: KeyTest };
 
 /** All API calls go through the background worker (CORS doesn't apply there). */

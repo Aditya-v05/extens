@@ -62,7 +62,12 @@ Phone numbers · automated outbound · email/opener generation · sequences · C
    - Company header (name, logo, size, industry) appears first
    - Fit score and checklist
    - Recommended persona and ranked contacts
-4. Contacts appear **one at a time**. The best-ranked contact is shown first; everyone else is in a dropdown ("Name, Title", with "(email ready)" or "(no email)"). The shown contact has **Reveal email (1 credit)**. The same picker (`src/components/ContactPicker.tsx`) is used in My Accounts.
+4. **Contacts** (`src/components/ContactPicker.tsx`, also used in My Accounts):
+   - **Up front:** the best contact, plus anyone within 10 rank points of them who ranks at least 60 and has an email, up to 3 (`splitContacts` in `src/lib/contacts.ts`). Two very good people both show.
+   - **Everyone else:** under "Show N more contacts", which expands *inside* the panel as two-line rows (name and title; rank and Reveal on the right). No native dropdown, which the OS draws outside the panel.
+   - **Reveal all N emails (N credits):** asks inline first, states the cost, and warns if it would pass the monthly budget.
+   - **How reveals run:** 3 requests at a time, credits recorded only for people Apollo finds, and cache / saved account / panel each updated in **one** write, so parallel reveals can't overwrite each other.
+   - **Afterwards:** a summary, e.g. "Revealed 5 emails. 1 had no email in Apollo.".
 
 ### 4.3 Reveal, save, export
 - **Reveal:** calls Apollo's enrichment for that one person. The email and its status (verified/guessed) are cached with the contact.

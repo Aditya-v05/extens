@@ -245,10 +245,7 @@ function AccountRowView({ row, cost }: { row: AccountRow; cost: number }) {
 function AccountDetails({ row }: { row: AccountRow }) {
   const r = row.result;
   const [note, setNote] = useState(row.meta.note);
-  const reveal = async (personId: string) => {
-    const res = await send({ type: 'reveal', windowId: null, domain: row.domain, personId });
-    return res.ok ? null : res.error;
-  };
+  const reveal = (personIds: string[]) => send({ type: 'reveal', windowId: null, domain: row.domain, personIds });
   useEffect(() => setNote(row.meta.note), [row.meta.note]);
 
   return (

@@ -4,7 +4,7 @@ import * as apollo from '@/lib/apollo';
 import { toLookupError, describeError } from '@/lib/errors';
 import * as jev from '@/lib/jev';
 import type { KeyTest, Message } from '@/lib/messages';
-import { refreshBalance, revealContact, runLookup } from '@/lib/pipeline';
+import { refreshBalance, revealContacts, runLookup } from '@/lib/pipeline';
 import { domainFromUrl } from '@/lib/resolver';
 import { setView } from '@/lib/storage';
 
@@ -41,9 +41,9 @@ export default defineBackground(() => {
         refreshBalance(true).then(() => sendResponse({ ok: true }));
         return true;
       case 'reveal':
-        revealContact(msg.windowId, msg.domain, msg.personId)
-          .then(() => sendResponse({ ok: true }))
-          .catch((err) => sendResponse({ ok: false, error: toLookupError(err) }));
+        revealContacts(msg.windowId, msg.domain, msg.personIds)
+          .then(sendResponse)
+          .catch((err) => sendResponse({ revealed: 0, noEmail: 0, failed: msg.personIds.length, error: toLookupError(err) }));
         return true;
       case 'testKeys':
         Promise.all([

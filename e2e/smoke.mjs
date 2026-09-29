@@ -75,15 +75,26 @@ for (const domain of ['gorgias.com', 'linear.app']) {
   await panel.click('text=/less relevant/').catch(() => {});
   await panel.screenshot({ path: `${OUT}/panel-${domain.split('.')[0]}.png`, fullPage: true });
 }
-// Contacts: one at a time, the rest behind a dropdown (panel is on linear.app, 2 contacts).
-const gate = panel.locator('text=/contacts? anyway/');
-if (await gate.count()) await gate.click(); // low fits hide contacts behind a link
-check((await panel.locator('.contact').count()) === 1, 'panel shows one contact at a time');
-const options = await panel.locator('select[aria-label="Choose a contact"] option').allInnerTexts();
-check(options.length === 2 && options[0].startsWith('Erin F.'), `contact dropdown lists everyone, best first (${options.join(' | ')})`);
-await panel.selectOption('select[aria-label="Choose a contact"]', { index: 1 });
-check((await panel.locator('.contact strong').innerText()) === 'Cristina Cordova', 'choosing a contact shows them');
-await panel.screenshot({ path: `${OUT}/panel-contact-picked.png`, fullPage: true });
+// Contacts on gorgias.com: two near-tied best contacts up front, six more tucked away inside the panel.
+await panel.evaluate(async (result) => {
+  const w = await chrome.windows.getCurrent();
+  await chrome.storage.session.set({ [`view_${w.id}`]: { status: 'done', domain: 'gorgias.com', result, cached: true } });
+}, results['gorgias.com']);
+await panel.reload();
+await panel.waitForSelector('.contact-list');
+const featured = await panel.locator('.contact:not(.compact) strong').allInnerTexts();
+check(featured.join() === 'Maya Chen,Tom R.', `two very good contacts both show up front (${featured.join(', ')})`);
+check((await panel.locator('.contact.compact').count()) === 0, 'other contacts start collapsed');
+await panel.click('text=/Show 6 more contacts/');
+check((await panel.locator('.contact.compact').count()) === 6, 'the rest expand as a list');
+const width = await panel.evaluate(() => document.documentElement.clientWidth);
+const overflow = await panel.evaluate(() => Math.max(...[...document.querySelectorAll('.more, .contact')].map((e) => e.getBoundingClientRect().right)));
+check(overflow <= width, `expanded list stays inside the panel (${Math.round(overflow)} <= ${width}px)`);
+check(await panel.locator('select').count() === 0, 'no native dropdown that could spill outside the panel');
+await panel.click('text=/Reveal all 6 emails \\(6 credits\\)/');
+check(await panel.locator('.confirm').isVisible(), 'reveal all asks first and states the cost');
+await panel.screenshot({ path: `${OUT}/panel-contacts.png`, fullPage: true });
+await panel.click('.confirm >> text=Cancel');
 const bg = await panel.evaluate(() => getComputedStyle(document.body).backgroundColor);
 check(bg === 'rgb(255, 255, 255)', `panel stays white in OS dark mode (${bg})`);
 const text = await panel.evaluate(() => document.body.innerText);

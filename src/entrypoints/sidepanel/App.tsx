@@ -369,11 +369,7 @@ function Contacts({ result, ranking, windowId, lowFit }: { result: LookupResult;
   if (!contacts.length) {
     return <div className="notice">No contacts found at this company in Apollo.</div>;
   }
-  const reveal = async (personId: string) => {
-    if (windowId === null) return null;
-    const res = await send({ type: 'reveal', windowId, domain: result.domain, personId });
-    return res.ok ? null : res.error;
-  };
+  const reveal = (personIds: string[]) => send({ type: 'reveal', windowId, domain: result.domain, personIds });
   return (
     <section className="stack contacts">
       {result.contactsFallback && (

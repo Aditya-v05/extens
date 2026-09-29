@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import * as apollo from './apollo';
 import { lookupCost, overBudget, parseBalance, totalSpent, type Settings } from './credits';
+import { applyReveals, type RevealPatch } from './contacts';
 import { ApiError, toLookupError } from './errors';
 import * as jev from './jev';
 import { applyRanks, mapFit, mapPersona, mapWhyNow, upgradeResult } from './mapping';
@@ -14,7 +15,7 @@ import { scanSite, type SiteScan, type Snippet } from './site-scan';
 import { evaluateRules } from './rules';
 import { jobCandidates, signalCandidates, type JobCandidate, type SignalCandidate } from './signals';
 import * as store from './storage';
-import type { Keys, LookupResult, Profile, ViewState, WhyNow } from './types';
+import type { Keys, LookupError, LookupResult, Profile, ViewState, WhyNow } from './types';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -230,38 +231,66 @@ async function findPeople(key: string, organizationId: string, personas: string[
 
 // ---------- reveal ----------
 
-/** Spend one Apollo credit to reveal a person, and patch every copy of them we hold. */
-export async function revealContact(windowId: number | null, domain: string, personId: string): Promise<void> {
+export interface RevealOutcome {
+  revealed: number;
+  /** Found by Apollo but without an email. */
+  noEmail: number;
+  failed: number;
+  error: LookupError | null;
+}
+
+/**
+ * Reveal emails for several people (a few requests at a time), then record the credits and patch
+ * every copy we hold (cache, saved account, open panel) in one write each, so parallel reveals
+ * can't overwrite each other.
+ */
+export async function revealContacts(windowId: number | null, domain: string, personIds: string[]): Promise<RevealOutcome> {
   const keys = await store.getKeys();
   if (!keys?.apollo) throw new Error('Missing Apollo key');
-  const r = await apollo.revealPerson(keys.apollo, personId);
-  // Apollo charges enrichment only when it finds the person.
-  if (r.found) await store.recordSpend('reveal');
-  refreshBalance();
-  const reveal = {
-    lastName: r.lastName,
-    email: r.email,
-    emailStatus: r.emailStatus,
-    linkedin: r.linkedin,
-    revealedAt: Date.now(),
-    ...(r.title ? { title: r.title } : {}),
-  };
-  await store.putReveal(personId, reveal);
+  const reveals: Record<string, RevealPatch> = {};
+  let found = 0;
+  let failed = 0;
+  let error: LookupError | null = null;
 
-  const patch = (res: LookupResult): LookupResult => ({
-    ...res,
-    contacts: res.contacts?.map((c) => (c.apolloId === personId ? { ...c, ...reveal } : c)) ?? null,
-  });
-  const cached = await store.getCached(domain);
-  if (cached) await store.putCached(patch(cached));
-  const saved = (await store.getSaved())[domain];
-  if (saved) await store.saveAccount(patch(saved));
-  if (windowId === null) return;
-  const view = await store.getView(windowId);
-  if (view.status === 'done' && view.domain === domain) {
-    await store.setView(windowId, { ...view, result: patch(view.result) });
+  const queue = [...new Set(personIds)];
+  const worker = async () => {
+    for (let id = queue.shift(); id; id = queue.shift()) {
+      try {
+        const r = await apollo.revealPerson(keys.apollo, id);
+        if (r.found) found++; // Apollo charges enrichment only when it finds the person.
+        reveals[id] = {
+          lastName: r.lastName, email: r.email, emailStatus: r.emailStatus, linkedin: r.linkedin, revealedAt: Date.now(),
+          ...(r.title ? { title: r.title } : {}),
+        };
+      } catch (err) {
+        failed++;
+        error ??= toLookupError(err);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(REVEAL_CONCURRENCY, queue.length) }, worker));
+
+  if (found) await store.recordSpend('reveal', found);
+  refreshBalance();
+  if (Object.keys(reveals).length) {
+    await store.putReveals(reveals);
+    const cached = await store.getCached(domain);
+    if (cached) await store.putCached(applyReveals(cached, reveals));
+    const saved = (await store.getSaved())[domain];
+    if (saved) await store.saveAccount(applyReveals(saved, reveals));
+    if (windowId !== null) {
+      const view = await store.getView(windowId);
+      if (view.status === 'done' && view.domain === domain) {
+        await store.setView(windowId, { ...view, result: applyReveals(view.result, reveals) });
+      }
+    }
   }
+  const withEmail = Object.values(reveals).filter((r) => r.email).length;
+  return { revealed: withEmail, noEmail: Object.keys(reveals).length - withEmail, failed, error };
 }
+
+/** Parallel Apollo enrichment requests during "reveal all". */
+const REVEAL_CONCURRENCY = 3;
 
 // ---------- credit balance ----------
 

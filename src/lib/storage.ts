@@ -103,10 +103,8 @@ export async function unsaveAccount(domain: string): Promise<void> {
 
 export const getReveals = async () => (await getLocal('reveals')) ?? {};
 
-export async function putReveal(personId: string, reveal: LocalSchema['reveals'][string]): Promise<void> {
-  const reveals = await getReveals();
-  reveals[personId] = reveal;
-  await setLocal('reveals', reveals);
+export async function putReveals(batch: LocalSchema['reveals']): Promise<void> {
+  await setLocal('reveals', { ...(await getReveals()), ...batch });
 }
 
 /** Apply stored reveals to contacts (reveals outlive the 7-day cache). */

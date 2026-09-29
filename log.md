@@ -4,6 +4,24 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Contacts: best up front, the rest inside the panel, reveal all
+
+> "the drop down should be limited to the extension panel - and we should have the best contatc out first and the other contacts are in a dropdown - what happens if there are two very good contacts do both of them show up - and there should be a button to enrich all of them at one go"
+
+- **Dropdown escaping the panel:** a native `<select>` menu is drawn by the OS and spilled over the page. Replaced by "Show N more contacts", which expands inside the panel as two-line rows (name and title; rank and *Reveal (1 cr)* on the right).
+- **Two very good contacts:** now both show. Up front = the best, plus anyone within 10 rank points of them who ranks at least 60 and has an email, up to 3 (`splitContacts`, `src/lib/contacts.ts`). Before, only the single best showed.
+- **Reveal all:** *Reveal all N emails (N credits)* asks inline first, states the cost ("you're only charged for people Apollo finds"), and warns in red if it would pass the monthly budget. Afterwards it reports e.g. "Revealed 5 emails. 1 had no email in Apollo."
+- **`revealContacts`** (`src/lib/pipeline.ts`) replaces the single reveal. The `reveal` message takes `personIds`.
+  - Runs 3 Apollo requests at a time and records credits only for people found.
+  - Updates the cache, saved account and open panel in one write each. Revealing one at a time in parallel would have lost updates to read-modify-write races.
+  - Failed people stay unrevealed, so they can be retried.
+- **Tests:**
+  - `contacts.test.ts`: near-ties, the cap of 3, the minimum rank, no-email people, the multi-reveal patch.
+  - `reveal.test.ts`: at most 3 in flight, charges 6 of 8 (not-found and failed aren't charged), exactly one write per copy, failures stay retryable.
+  - Smoke test on a 8-contact sample: both near-tied contacts shown, the rest collapsed then expanded, the list stays within the 400px panel, no `<select>`, Reveal all asks with the cost. 18/18 pass.
+
+---
+
 ## 2026-09-29 — Renamed to Sift; contacts dropdown; icon
 
 > "all the emails getting listed like this is not efficient a drop down is good … lets rename it to sift … the icon as well"

@@ -39,7 +39,14 @@ export const results = {
       { label: 'Series A–C SaaS companies', source: 'jev', pass: true, state: 'met', credit: 0.96, p: 0.96 },
       { label: 'large customer support teams', source: 'jev', pass: true, state: 'unsure', credit: 0.5, p: 0.5 },
     ] }, persona: { chosen: 'Head of Support', confidence: 0.72, distribution: { 'Head of Support': 0.72 } },
-    contacts: [contact('g1', 'Maya', 'Chen', 'VP Customer Experience', 91, 'maya@gorgias.com'), contact('g2', 'Tom', 'Reyes', 'Head of Support', 88)],
+    // Two near-tied best contacts (91, 88) and six more: the panel should feature both and tuck the rest away.
+    contacts: [
+      contact('g1', 'Maya', 'Chen', 'VP Customer Experience', 91, 'maya@gorgias.com'), contact('g2', 'Tom', 'Reyes', 'Head of Support', 88),
+      contact('g3', 'Hamza', 'Hadi', 'Customer Service Support Manager', 74), contact('g4', 'Funmilayo', 'Okafor', 'Customer Experience Manager', 71),
+      contact('g5', 'Igor', 'Petrov', 'COO', 63), contact('g6', 'Dan', 'Wells', 'Chief Operating Officer', 60),
+      contact('g7', 'Nerses', 'Avetisyan', 'CX Enablement and Content Management', 52),
+      { ...contact('g8', 'Kimberly', 'Moss', 'Customer Service Support Manager', 49), hasEmail: false },
+    ],
     whyNow: { timing: 45, jobsStatus: 'ok', siteStatus: 'unavailable', signals: [sig('hiring', 'Hiring 6 relevant roles', 'Senior Customer Success Manager - Enterprise +5 more', 0.64)] },
   },
   'notion.com': {
