@@ -13,12 +13,10 @@ const PRIVACY = `${REPO}/blob/main/PRIVACY.md`;
 const LOG = `${REPO}/blob/main/log.md`;
 
 // three.js is most of the page's script; load it after the text has painted.
-const LazyField = lazy(() => import('./SiftField').then((m) => ({ default: m.SiftField })));
-const Field = (props: Parameters<typeof LazyField>[0]) => (
-  <Suspense fallback={null}>
-    <LazyField {...props} />
-  </Suspense>
-);
+const fx = () => import('./fx');
+const LazyVortex = lazy(() => fx().then((m) => ({ default: m.Vortex })));
+const LazyBlinds = lazy(() => fx().then((m) => ({ default: m.Blinds })));
+const LazySlats = lazy(() => fx().then((m) => ({ default: m.Slats })));
 
 /** Sections fade up as they enter the viewport, once. */
 function useReveal() {
@@ -41,7 +39,7 @@ export default function Landing() {
       <main id="top">
         <Hero />
         <section className="l-demo-wrap l-wrap" data-reveal>
-          <Eyebrow n="00" label="Watch it read a homepage" />
+          <Eyebrow label="Watch it read a homepage" />
           <Demo />
         </section>
         <Answers />
@@ -49,81 +47,76 @@ export default function Landing() {
         <Costs />
         <Privacy />
         <Faq />
-        <Closing />
       </main>
-      <Footer />
+      <End />
     </div>
   );
 }
 
-function Eyebrow({ n, label, dark }: { n: string; label: string; dark?: boolean }) {
+/** Section label: the sieve glyph, the question, and (for the answers) the score the card below shows. */
+function Eyebrow({ label, score, dark }: { label: string; score?: string; dark?: boolean }) {
   return (
     <p className={`l-eyebrow ${dark ? 'dark' : ''}`}>
-      <span>{n}</span> {label}
+      <i className="l-glyph" aria-hidden /> {label}
+      {score && <b>{score}</b>}
     </p>
   );
 }
 
-// ---------- nav: a floating glass pill ----------
+// ---------- nav: a full-width bar; a mint line reads how far down the page you are ----------
 
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const line = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 24);
+    const on = () => {
+      setScrolled(window.scrollY > window.innerHeight * 0.6);
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      line.current?.style.setProperty('transform', `scaleX(${max > 0 ? window.scrollY / max : 0})`);
+    };
     on();
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);
   }, []);
   return (
     <header className={`l-nav ${scrolled ? 'scrolled' : ''}`}>
-      <a className="l-brand" href="#top">
-        <img src={icon48} alt="" width="24" height="24" />
-        Sift
-      </a>
-      <nav>
-        <a href="#answers">How it works</a>
-        <a href="#costs">Costs</a>
-        <a href="#privacy">Privacy</a>
-        <a href={REPO}>GitHub</a>
-      </nav>
-      <a className="l-pill" href={INSTALL}>Install</a>
+      <div className="l-nav-in">
+        <a className="l-brand" href="#top">
+          <img src={icon48} alt="" width="24" height="24" />
+          Sift
+        </a>
+        <nav>
+          <a href="#answers">How it works</a>
+          <a href="#costs">Costs</a>
+          <a href="#privacy">Privacy</a>
+          <a href={REPO}>GitHub</a>
+        </nav>
+        <a className="l-pill" href={INSTALL}>Install</a>
+      </div>
+      <span className="l-progress" ref={line} aria-hidden />
     </header>
   );
 }
 
-// ---------- hero: companies in, one person out ----------
+// ---------- hero: the vortex, big and centred; the headline under it ----------
 
-const CHIPS = ['acme.example', 'northwind.example', 'fjordly.example', 'lumen.example', 'harbor.example', 'kettle.example'];
+function HeroMarks() {
+  return (
+    <>
+      <div className="l-mark"><img src={icon128} alt="" width="52" height="52" /></div>
+      <p className="l-note in"><span>every company you visit</span></p>
+      <p className="l-note out"><span>the few worth your time</span></p>
+    </>
+  );
+}
 
 function Hero() {
   return (
     <section className="l-hero">
-      <Dots corner="tl" />
-      <Dots corner="tr" />
-      <Dots corner="bl" />
-      <Dots corner="br" />
-      <div className="l-flow" aria-hidden>
-        <div className="l-chips">
-          {CHIPS.map((c, i) => (
-            <span key={c} className="l-chip" style={{ animationDelay: `${i * 90}ms` }}>
-              <i /> {c}
-            </span>
-          ))}
-        </div>
-        <div className="l-flow-field">
-          <Field count={2400} top={0.98} sieve={0.02} bottom={-0.86} width={1.9} />
-        </div>
-        <div className="l-node">
-          <img src={icon128} alt="" width="44" height="44" />
-        </div>
-        <div className="l-result">
-          <span className="l-result-dot" />
-          Ingrid Holm, VP Customer Experience <b>92</b>
-        </div>
-      </div>
-
+      <Suspense fallback={<div className="l-vortex"><HeroMarks /></div>}>
+        <LazyVortex><HeroMarks /></LazyVortex>
+      </Suspense>
       <div className="l-hero-copy">
-        <p className="l-eyebrow dark"><span>sift</span> a Chrome extension for outbound</p>
         <h1>
           Know who's worth <em>talking to.</em>
         </h1>
@@ -135,25 +128,8 @@ function Hero() {
           <a className="l-btn mint" href={INSTALL}>Install from GitHub</a>
           <a className="l-btn glass" href="#answers">See how it works</a>
         </div>
-        <dl className="l-stats">
-          <div><dt>1</dt><dd>click on any company site</dd></div>
-          <div><dt>4</dt><dd>answers: fit, why now, who, email</dd></div>
-          <div><dt>0</dt><dd>servers between you and your data</dd></div>
-          <div><dt>2</dt><dd>Apollo credits per new lookup</dd></div>
-        </dl>
       </div>
-      <div className="l-wordmark" aria-hidden>SIFT</div>
     </section>
-  );
-}
-
-/** Decorative dot grid for the hero's corners (drawn, not a gradient). */
-function Dots({ corner }: { corner: 'tl' | 'tr' | 'bl' | 'br' }) {
-  const rows = [6, 4, 2];
-  return (
-    <svg className={`l-dots ${corner}`} width="96" height="60" viewBox="0 0 96 60" aria-hidden>
-      {rows.map((n, r) => Array.from({ length: n }, (_, c) => <circle key={`${r}-${c}`} cx={6 + c * 16} cy={6 + r * 22} r="2.4" />))}
-    </svg>
   );
 }
 
@@ -168,13 +144,13 @@ const fromProfile: LookupResult = {
 };
 const noop = async () => ({ revealed: 0, noEmail: 0, failed: 0, error: null });
 
-function Answer({ n, eyebrow, title, children, visual, tint, flip }: {
-  n: string; eyebrow: string; title: ReactNode; children: ReactNode; visual: ReactNode; tint: string; flip?: boolean;
+function Answer({ score, eyebrow, title, children, visual, tint, flip }: {
+  score: string; eyebrow: string; title: ReactNode; children: ReactNode; visual: ReactNode; tint: string; flip?: boolean;
 }) {
   return (
     <article className={`l-answer ${flip ? 'flip' : ''}`} data-reveal>
       <div className="l-answer-copy">
-        <Eyebrow n={n} label={eyebrow} />
+        <Eyebrow label={eyebrow} score={score} />
         <h2>{title}</h2>
         {children}
       </div>
@@ -192,7 +168,7 @@ function Answers() {
       </div>
 
       <Answer
-        n="01" eyebrow="Does it fit?" tint="mint"
+        score="90" eyebrow="Does it fit?" tint="mint"
         title={<>Scored against <em>your</em> requirements.</>}
         visual={<div className="l-ui"><FitCard fit={acme.fit!} /></div>}
       >
@@ -201,7 +177,7 @@ function Answers() {
       </Answer>
 
       <Answer
-        n="02" eyebrow="Why now?" tint="sand" flip
+        score="74" eyebrow="Why now?" tint="sand" flip
         title={<>Reasons to reach out <em>this week.</em></>}
         visual={
           <div className="l-ui-stack">
@@ -218,7 +194,7 @@ function Answers() {
       </Answer>
 
       <Answer
-        n="03" eyebrow="Who to email?" tint="peach"
+        score="92" eyebrow="Who to email?" tint="peach"
         title={<>The person who <em>owns the problem.</em></>}
         visual={<div className="l-ui contacts"><ContactPicker contacts={acmeRevealed.contacts!} reveal={noop} /></div>}
       >
@@ -227,7 +203,7 @@ function Answers() {
       </Answer>
 
       <Answer
-        n="04" eyebrow="On LinkedIn too" tint="fog" flip
+        score="88" eyebrow="On LinkedIn too" tint="fog" flip
         title={<>From a profile to <em>a verdict.</em></>}
         visual={
           <div className="l-li">
@@ -254,7 +230,7 @@ function After() {
   return (
     <section className="l-after l-wrap" data-reveal>
       <div className="l-tile dark">
-        <Eyebrow n="05" label="My Accounts" dark />
+        <Eyebrow label="My Accounts" dark />
         <h3>Every company you save, ranked.</h3>
         <p>By fit and timing, with a status, a note and CSV export. Refresh any account for 2 credits.</p>
         <div className="l-mini-rows" aria-hidden>
@@ -264,7 +240,7 @@ function After() {
         </div>
       </div>
       <div className="l-tile light">
-        <Eyebrow n="06" label="Discover" />
+        <Eyebrow label="Discover" />
         <h3>Fifty more like your best accounts.</h3>
         <p>Apollo's lookalike search, filtered by your ideal customer, for one credit. Look up the ones you like.</p>
         <div className="l-mini-chips" aria-hidden>
@@ -303,27 +279,31 @@ function CountUp({ to }: { to: number }) {
 }
 
 function Costs() {
-  const items = [
-    { n: 2, tint: 'mint', what: 'credits to look up a new company', note: '1 for the company, 1 for its job postings. Revisits within 7 days are free.' },
-    { n: 0, tint: 'fog', what: 'credits to find the people', note: "Apollo's people search costs nothing." },
-    { n: 1, tint: 'sand', what: 'credit per email you reveal', note: 'Only charged when Apollo finds the person.' },
-    { n: 1, tint: 'peach', what: 'credit per LinkedIn profile', note: 'Email included. Free again for 30 days.' },
+  const lines = [
+    { n: 2, what: 'Look up a new company', note: '1 for the company, 1 for its job postings. Free again for 7 days.' },
+    { n: 0, what: 'Find the people', note: "Apollo's people search costs nothing." },
+    { n: 1, what: 'Reveal an email', note: 'Only charged when Apollo finds the person.' },
+    { n: 1, what: 'Look up a LinkedIn profile', note: 'Email included. Free again for 30 days.' },
   ];
   return (
     <section id="costs" className="l-costs l-wrap">
-      <div className="l-section-head" data-reveal>
-        <Eyebrow n="07" label="Costs" />
+      <div className="l-costs-head" data-reveal>
+        <Eyebrow label="Costs" />
         <h2>It costs <em>what it says.</em></h2>
         <p>Sift spends your Apollo credits and puts the price on every button. Set a monthly budget and it asks before going over.</p>
       </div>
-      <div className="l-cost-grid" data-reveal>
-        {items.map((i) => (
-          <div key={i.what} className={`l-cost ${i.tint}`}>
-            <div className="l-cost-n"><CountUp to={i.n} /></div>
-            <div className="l-cost-what">{i.what}</div>
-            <p>{i.note}</p>
+      <div className="l-receipt" data-reveal>
+        <div className="l-receipt-top"><span>Apollo credits</span><span>per action</span></div>
+        {lines.map((l) => (
+          <div key={l.what} className="l-receipt-line">
+            <div>
+              <div className="l-receipt-what">{l.what}<i aria-hidden /></div>
+              <p>{l.note}</p>
+            </div>
+            <div className="l-receipt-n"><CountUp to={l.n} /></div>
           </div>
         ))}
+        <div className="l-receipt-foot"><span>Sift's own fee</span><b>0</b></div>
       </div>
     </section>
   );
@@ -334,9 +314,10 @@ function Costs() {
 function Privacy() {
   return (
     <section id="privacy" className="l-privacy">
+      <Suspense fallback={null}><LazyBlinds /></Suspense>
       <div className="l-wrap l-privacy-in" data-reveal>
         <div>
-          <Eyebrow n="08" label="Privacy" dark />
+          <Eyebrow label="Privacy" dark />
           <h2>Your keys. Your browser. <em>Nothing in between.</em></h2>
           <ul>
             <li>No Sift server, no account, no analytics.</li>
@@ -371,7 +352,7 @@ function Faq() {
   return (
     <section className="l-faq l-wrap" data-reveal>
       <div>
-        <Eyebrow n="09" label="Questions" />
+        <Eyebrow label="Questions" />
         <h2>Good <em>questions.</em></h2>
       </div>
       <div>
@@ -386,28 +367,18 @@ function Faq() {
   );
 }
 
-// ---------- closing and footer ----------
+// ---------- the end: one night block, closing line on top, footer over a sea of slats ----------
 
-function Closing() {
+function End() {
   return (
-    <section className="l-closing">
-      <div className="l-closing-field">
-        <Field count={1500} top={1.05} sieve={-0.15} bottom={-1.1} width={2.6} span={0.5} />
-      </div>
-      <div className="l-closing-copy" data-reveal>
+    <footer className="l-end">
+      <div className="l-end-copy l-wrap" data-reveal>
         <h2>Sift the next company <em>you visit.</em></h2>
         <div className="l-ctas">
           <a className="l-btn mint" href={INSTALL}>Install from GitHub</a>
           <a className="l-btn glass" href={REPO}>Read the source</a>
         </div>
       </div>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="l-footer">
       <div className="l-wrap l-footer-top">
         <div className="l-footer-brand">
           <a className="l-brand" href="#top"><img src={icon48} alt="" width="26" height="26" /> Sift</a>
@@ -433,7 +404,9 @@ function Footer() {
           </div>
         </div>
       </div>
-      <div className="l-footer-mark" aria-hidden>SIFT</div>
+      <div className="l-sea">
+        <Suspense fallback={null}><LazySlats /></Suspense>
+      </div>
       <div className="l-wrap l-footer-base">
         <span>Built on Apollo and TypeSafe Jev. Not affiliated with either.</span>
         <span>2026</span>

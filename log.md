@@ -4,6 +4,32 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing page v4: our own look (branch `site-redesign`, preview only)
+
+> "i like the style but it feels like we straight up ripped off we need to add our own twist … i dont necessarily want so much cursor action … we can have the 3js swirl as the main part not so small on the top … the text with the beautiful sift embed … bigger and more in the center"
+
+- **Hero is the swirl** (`site/fx.tsx`, replaces `SiftField.tsx`). Sifting as panning for gold:
+  - thousands of dots ride three spiral arms in towards the Sift mark;
+  - most flash and are flung back over the rim, and about 1 in 12 turns mint and settles into a ring around the mark;
+  - it is big and centred, with two hand-set notes ("every company you visit", "the few worth your time");
+  - the headline, lede and buttons sit under it; the chips, result pill, stats and outline wordmark are gone.
+- **No cursor effects anywhere.** The pictures move on their own.
+- **Meridian signatures removed and replaced with a sieve motif:**
+  - the framed card with dot corners → a full-bleed night hero;
+  - the glass pill nav → a full-width bar with a mint scroll-progress line;
+  - numbered chips → a sieve glyph, the question, and the score the card beside it shows (90, 74, 92, 88, matching the demo data);
+  - flat tinted blocks → slatted stages;
+  - tinted cost cards → a receipt with dotted leaders and "Sift's own fee: 0";
+  - the privacy band sits behind closed blinds (a shader), and the closing and footer are one night block over a rolling sea of slats instead of a giant wordmark.
+- **Shaders:** the React Bits components the user shared (GradientBlinds, MicroSlats) were ideas only. The blinds and slats are our own small three.js shaders: no `ogl` dependency, and no Commons Clause code in an MIT repo. All three share one lifecycle: they draw only while on screen, pause in hidden tabs and hold a still frame under reduced motion.
+- **Verified:**
+  - Playwright at 1440 and 390 px, screenshots reviewed (fixed the dark-on-dark closing headline, too-bright blinds light, a small mobile swirl, and note legibility over the arms);
+  - no overflow, no page errors, reveals fire, content visible under reduced motion, card hover lift -4 px;
+  - `og.png` regenerated;
+  - compile, 123 tests, `wxt build` and smoke (28) pass.
+
+---
+
 ## 2026-09-30 — Landing page v3: centred funnel hero, Meridian-style sections (branch `site-redesign`, preview only)
 
 > "this part makes little sense - id like to have the hero section text alligned tpo thew center with the particle funekling in the middle - also it looks pretty bland and boring … the header and footer are lackluster https://meridian-ind.vercel.app/"
