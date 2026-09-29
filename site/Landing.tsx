@@ -4,6 +4,7 @@ import { FitCard, ProfileCard, WhyNowCard } from '@/entrypoints/sidepanel/App';
 import type { LookupResult } from '@/lib/types';
 import icon48 from '../public/icon/48.png';
 import { Demo } from './Demo';
+import { Evidence } from './Evidence';
 import { acme, acmeRevealed } from './demo-data';
 
 const REPO = 'https://github.com/Aditya-v05/extens';
@@ -17,7 +18,6 @@ const ISSUES = `${REPO}/issues`;
 
 // three.js is most of the page's script; load it after the text has painted.
 const fx = () => import('./fx');
-const LazyVortex = lazy(() => fx().then((m) => ({ default: m.Vortex })));
 const LazyBlinds = lazy(() => fx().then((m) => ({ default: m.Blinds })));
 const LazySlats = lazy(() => fx().then((m) => ({ default: m.Slats })));
 
@@ -100,73 +100,23 @@ function Nav() {
   );
 }
 
-// ---------- hero: the promise on the left, the answer it produces on the right ----------
-
-const topContact = acmeRevealed.contacts![0]!;
+// ---------- hero: one centred idea, then Sift visibly doing it ----------
 
 function Hero() {
   return (
     <section className="l-hero">
-      <div className="l-hero-in">
-        <div className="l-hero-copy">
-          <h1>
-            Know who's worth <em>talking to.</em>
-          </h1>
-          <p className="l-lede">
-            Sift qualifies any company you visit, explains why it matters now, and surfaces the best person to contact.
-          </p>
-          <div className="l-ctas">
-            <a className="l-btn mint" href={INSTALL}>Install Sift</a>
-            <a className="l-btn glass" href="#demo">See the demo</a>
-          </div>
-          <p className="l-fine">Free and open source. Runs on your own Apollo and Jev keys, one click in your browser.</p>
+      <div className="l-hero-copy">
+        <h1>
+          Know who's worth<br /><em>talking to.</em>
+        </h1>
+        <p className="l-lede">Qualify any company. Find the signal. Reach the right person.</p>
+        <div className="l-ctas">
+          <a className="l-btn cream" href={INSTALL}>Install Sift</a>
         </div>
-
-        <div className="l-visual">
-          <div className="l-visual-fx">
-            <Suspense fallback={null}><LazyVortex /></Suspense>
-          </div>
-          <SignalCard />
-        </div>
+        <p className="l-fine">Bring your own Apollo + Jev keys</p>
       </div>
+      <Evidence />
     </section>
-  );
-}
-
-/** The panel's answer, condensed: every number here is the same one the real panel shows for Acme below. */
-function SignalCard() {
-  const why = acme.whyNow!;
-  return (
-    <div className="l-signal" aria-label="Example result for Acme">
-      <div className="l-signal-head">
-        <span className="l-signal-logo" aria-hidden>A</span>
-        <div className="l-signal-co">
-          <strong>{acme.company.name}</strong>
-          <span>{acme.company.domain}, {acme.company.headcount} employees</span>
-        </div>
-        <div className="l-signal-fit"><CountUp to={acme.fit!.score} /><small>fit</small></div>
-      </div>
-
-      <div className="l-signal-label"><span>Why now</span><b>Timing {why.timing}</b></div>
-      <ul className="l-signal-list">
-        {why.signals.slice(0, 3).map((sig) => (
-          <li key={sig.label}>
-            <span>{sig.label}</span>
-            <em>{Math.round(sig.relevance * 100)}%</em>
-          </li>
-        ))}
-      </ul>
-
-      <div className="l-signal-label"><span>Talk to</span></div>
-      <div className="l-signal-person">
-        <span className="l-signal-avatar" aria-hidden>{topContact.firstName[0]}{topContact.lastName?.[0]}</span>
-        <div>
-          <strong>{topContact.firstName} {topContact.lastName}</strong>
-          <span>{topContact.title}</span>
-        </div>
-        <b>{topContact.rank}</b>
-      </div>
-    </div>
   );
 }
 
@@ -200,6 +150,7 @@ function Answers() {
   return (
     <section id="answers" className="l-answers l-wrap">
       <div className="l-section-head" data-reveal>
+        <Eyebrow label="How Sift got there" />
         <h2>One click. <em>Four answers.</em></h2>
         <p>The side panel reads the company for you while you're still on their homepage. These are its real parts.</p>
       </div>
@@ -412,7 +363,7 @@ function End() {
       <div className="l-end-copy l-wrap" data-reveal>
         <h2>Sift the next company <em>you visit.</em></h2>
         <div className="l-ctas">
-          <a className="l-btn mint" href={INSTALL}>Install from GitHub</a>
+          <a className="l-btn cream" href={INSTALL}>Install Sift</a>
           <a className="l-btn glass" href={REPO}>Read the source</a>
         </div>
       </div>

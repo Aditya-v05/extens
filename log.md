@@ -4,6 +4,31 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing v6: centred hero with a living evidence canvas (branch `site-redesign`)
+
+> "no lets not use the right left design its too ai like can we think of something different". Then a pasted direction: one centred idea with very little copy, then show Sift doing it ("noise comes in, one answer comes out"). Mint should mean signal only. Kill the galaxy, the ghost wordmark and the second CTA.
+
+- **Copy:**
+  - "Know who's worth / *talking to.*";
+  - "Qualify any company. Find the signal. Reach the right person.";
+  - one CTA, **Install Sift** (cream), with "Bring your own Apollo + Jev keys" in small mono.
+- **Evidence canvas** (`site/Evidence.tsx`), about 1100 px wide under the copy. It plays a 12.8 s loop:
+  1. six pieces of evidence about Acme appear in grey (status: "reading acme.example…");
+  2. the three that don't matter (the Series B at 48%, a blog offsite recap, a brand-designer opening) blur away ("sifting…");
+  3. the three that do (hiring 86%, the pricing-page quote 71%, headcount 62%) turn mint and draw in, and thin mint lines join them;
+  4. Ingrid Holm, VP Customer Experience, 92 (fit 90, timing 74) appears ("signal.").
+- **Receipts:** hovering or focusing any piece shows its source. The loop holds while you hover, or while the canvas is off screen or the tab is hidden.
+- **Other behaviour:** reduced motion shows the final answer at once. On phones the pieces stack and connect vertically. Every number comes from `demo-data.ts`.
+- **Colour:** mint now means signal. The Install buttons (nav, hero, closing) are cream; the swirl and three.js are gone from the hero (fx.tsx now holds only the blinds and slats).
+- **Answers section:** labelled "How Sift got there".
+- **Verified:**
+  - screenshots of the sequence (reading, sifting, signal, hover receipt) at 1440 px and 390 px;
+  - every reveal fires on scroll; no overflow or page errors;
+  - `og.png` regenerated from the final frame;
+  - compile, 123 tests, `wxt build` and smoke pass.
+
+---
+
 ## 2026-09-30 — Landing v5: product-first hero (branch `site-redesign`)
 
 > Pasted critique: the hero had too many competing focal points (galaxy, ghost wordmark, long grey paragraph, three CTAs); "Don't sell mystery in space. Sell clarity from noise." Recommended: copy left, a real product result right, sparse dots, no ghost wordmark, one primary CTA, Privacy out of the top nav. The user: "i think we might have to use the best".

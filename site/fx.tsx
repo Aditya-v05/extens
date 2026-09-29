@@ -2,12 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 /*
- * The page's three moving pictures, all on one small lifecycle: a transparent canvas that fills its host,
+ * The page's two moving pictures, all on one small lifecycle: a transparent canvas that fills its host,
  * draws only while on screen and in a visible tab, and holds one still frame under reduced motion.
  * None of them follow the cursor; they move on their own.
  *
- *  - Vortex: the hero. Sifting as panning for gold: companies spiral in, most are flung off the rim,
- *    the few worth talking to turn mint and settle at the centre, behind the result card they become.
  *  - Blinds: the privacy band. Closed blinds with a slow light behind them.
  *  - Slats: the footer. A sea of sieve bars rolling towards the horizon.
  */
@@ -155,128 +153,6 @@ const SLATS_FRAG = /* glsl */ `
   }
 `;
 
-// ---------- the hero vortex ----------
-
-const VORTEX_VERT = /* glsl */ `
-  attribute vec4 aSeed;   // x: start angle, y: speed, z: passes (0/1), w: phase
-  attribute float aSize;
-  uniform float uTime, uAspect, uR, uCy, uTilt, uLift, uCore, uDpr;
-  varying float vAlpha;
-  varying float vMint;
-
-  void main() {
-    float t = fract(uTime * aSeed.y + aSeed.w);
-    float pass = aSeed.z;
-    // Most dots ride one of three arms, so the swirl reads as a spiral; the rest is loose dust.
-    float arm = floor(aSeed.x * 3.0) / 3.0 + (fract(aSeed.x * 37.0) - 0.5) * 0.09;
-    float onArm = step(0.3, fract(aSeed.w * 5.0));
-    float th0 = mix(aSeed.x, arm, onArm) * 6.2831853 + uTime * 0.1;
-    float rCut = pass > 0.5 ? uCore : uR * (0.3 + 0.12 * fract(aSeed.w * 13.0));
-    float rimR = uR * (1.0 + 0.1 * fract(aSeed.w * 7.0));
-    float r, th, alpha, mint = 0.0, rise = 0.0;
-
-    if (t < 0.72) {
-      // Spiral in, turning faster as the radius shrinks.
-      float u = t / 0.72;
-      r = mix(rimR, rCut, pow(u, 0.85));
-      th = th0 + 1.5 * uR / r;
-      mint = pass * smoothstep(0.5, 1.0, u);
-      alpha = mix(mix(0.22, 0.6, onArm), 1.0, mint) * smoothstep(0.0, 0.14, u);
-      alpha += (1.0 - pass) * 0.4 * smoothstep(0.86, 1.0, u);     // flash on the sieve
-    } else {
-      float v = (t - 0.72) / 0.28;
-      th = th0 + 1.5 * uR / rCut;
-      if (pass > 0.5) {
-        // Kept: a tight mint orbit around the mark.
-        r = rCut * (1.0 - 0.12 * v);
-        th += v * 6.0;
-        mint = 1.0;
-        alpha = 1.0 - smoothstep(0.7, 1.0, v);
-      } else {
-        // Rejected: flung back out over the rim, fading.
-        r = rCut + v * v * uR * 1.4;
-        th += v * 1.3;
-        alpha = mix(0.62, 1.0, onArm) * (1.0 - smoothstep(0.0, 0.6, v));
-        rise = v * 0.18;
-      }
-    }
-
-    float z = sin(th);
-    float x = r * cos(th);
-    float y = uCy + r * z * uTilt + uLift * (r / uR) * (r / uR) + rise;   // a shallow funnel, rim raised
-    float far = z * min(r / uR, 1.0);                                     // +1 at the back, -1 at the front
-    vAlpha = alpha * (1.0 - 0.35 * far);
-    vMint = mint;
-    gl_Position = vec4(x / uAspect, y, 0.0, 1.0);
-    gl_PointSize = aSize * uDpr * (1.0 - 0.3 * far) * mix(0.8 + 0.2 * onArm, 1.9, mint);
-  }
-`;
-
-const VORTEX_FRAG = /* glsl */ `
-  precision mediump float;
-  varying float vAlpha;
-  varying float vMint;
-  uniform vec3 uGrey, uMint;
-  void main() {
-    float d = length(gl_PointCoord - 0.5);
-    if (d > 0.5) discard;
-    gl_FragColor = vec4(mix(uGrey, uMint, vMint), vAlpha * smoothstep(0.5, 0.12, d));
-  }
-`;
-
-/** The vortex fills its host, centred: canvas units (y from -1 to 1, x scaled by height). */
-export function vortexLayout(w: number, h: number) {
-  const aspect = w / h;
-  return { aspect, R: Math.min(0.95, aspect * 0.95), cy: 0, tilt: 0.72, lift: 0.06 };
-}
-
-function vortex(count: number): () => Stage {
-  return () => {
-    const scene = new THREE.Scene();
-    const geo = new THREE.BufferGeometry();
-    const seeds = new Float32Array(count * 4);
-    const sizes = new Float32Array(count);
-    let s = 1234567; // deterministic: every visitor sees the same swirl
-    const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < count; i++) {
-      seeds[i * 4] = rand();
-      seeds[i * 4 + 1] = 0.035 + rand() * 0.05;
-      seeds[i * 4 + 2] = rand() < 0.08 ? 1 : 0;
-      seeds[i * 4 + 3] = rand();
-      sizes[i] = 1.5 + rand() * 2.3;
-    }
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
-    geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 4));
-    geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-    const uniforms = {
-      uTime: { value: 0 }, uAspect: { value: 1 }, uR: { value: 1 }, uCy: { value: 0 }, uTilt: { value: 0.34 },
-      uLift: { value: 0.12 }, uCore: { value: 0.2 }, uDpr: { value: 1 },
-      uGrey: { value: new THREE.Color('#b4c9c6') }, uMint: { value: new THREE.Color('#9ff2d6') },
-    };
-    const mat = new THREE.ShaderMaterial({
-      vertexShader: VORTEX_VERT, fragmentShader: VORTEX_FRAG, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    });
-    const points = new THREE.Points(geo, mat);
-    points.frustumCulled = false;
-    scene.add(points);
-    return {
-      scene,
-      resize: (w, h, dpr) => {
-        const l = vortexLayout(w, h);
-        uniforms.uAspect.value = l.aspect;
-        uniforms.uR.value = l.R;
-        uniforms.uCy.value = l.cy;
-        uniforms.uTilt.value = l.tilt;
-        uniforms.uLift.value = l.lift;
-        uniforms.uCore.value = Math.max(0.07, (30 / h) * 2); // a tight orbit around the selection point
-        uniforms.uDpr.value = dpr;
-      },
-      tick: (t) => { uniforms.uTime.value = t; },
-      dispose: () => { geo.dispose(); mat.dispose(); },
-    };
-  };
-}
-
 // ---------- components ----------
 
 function useStage(make: () => () => Stage, deps: unknown[]) {
@@ -287,13 +163,6 @@ function useStage(make: () => () => Stage, deps: unknown[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   return host;
-}
-
-/** The hero picture: a sparse swirl of companies, drawn behind the result card it feeds. */
-export function Vortex() {
-  const [count] = useState(() => (window.innerWidth < 700 ? 900 : 1700));
-  const host = useStage(() => vortex(count), [count]);
-  return <div className="l-fx" ref={host} aria-hidden />;
 }
 
 export function Blinds() {
