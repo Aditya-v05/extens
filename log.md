@@ -4,6 +4,13 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Site redeployed; auto-deploy from GitHub
+
+- Production redeployed with full-URL `og:image`, `og:url` and canonical tags, checked on the live page (`og.png` served as `image/png`).
+- The GitHub repo `Aditya-v05/extens` is connected to the Vercel project `sift` (it was already connected when `vercel link` set up the project). **Every push to `main` now deploys the site to production.** Pull requests and other branches get preview URLs.
+
+---
+
 ## 2026-09-29 — Landing page (Vercel)
 
 > "lets host in vercel - yes install form guithub with coming soon - i think a looping animatio maybe"
