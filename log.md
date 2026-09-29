@@ -4,6 +4,20 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing video: a made-up email instead of a blur
+
+> "instead of blurring can we just use like a fake email like a made up one"
+
+- **What:** the revealed address in the demo now reads `dan@usepylon.example`. `.example` is reserved (RFC 2606) and can never belong to anyone. It is drawn in Remotion over the panel in its own font (Schibsted Grotesk), colour and background, inside the camera's coordinate space, so it zooms and pans with the page. It is on screen from 11.7 s to 14.4 s of the recording.
+- **Safety net:** the blur in `clean.mp4` stays under the text and now starts at 11.7 s, right at the reveal, so "Revealing…" is no longer blurred.
+- **Verified:**
+  - every frame from 11.4 s to 14.4 s (in recording time) in both cuts goes straight from "Revealing…" to the made-up address;
+  - no frame shows the real one, including during the crossfade to the Save clip;
+  - the patch matches the panel (#fcfcfc, feathered edge);
+  - tests pass.
+
+---
+
 ## 2026-09-30 — Landing video edited in Remotion (branch `site-redesign`)
 
 > "no ant use like remotion ??"

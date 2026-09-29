@@ -1,5 +1,6 @@
 import { loadFont as loadSerif } from '@remotion/google-fonts/InstrumentSerif';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
+import { loadFont as loadSans } from '@remotion/google-fonts/SchibstedGrotesk';
 import React, { type ReactNode } from 'react';
 import {
   AbsoluteFill, Easing, Img, OffthreadVideo, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig,
@@ -17,6 +18,7 @@ import {
 const { fontFamily: serif } = loadSerif('normal', { weights: ['400'], subsets: ['latin'] });
 loadSerif('italic', { weights: ['400'], subsets: ['latin'] });
 const { fontFamily: mono } = loadMono('normal', { weights: ['400'], subsets: ['latin'] });
+const { fontFamily: sans } = loadSans('normal', { weights: ['400'], subsets: ['latin'] }); // the panel's font
 
 const FPS = 30;
 const SRC = { w: 2940, h: 1838 };
@@ -102,6 +104,31 @@ function cameraAt(keys: Key[], t: number): Rect {
   return { x: mix(r0.x, r1.x), y: mix(r0.y, r1.y), w: mix(r0.w, r1.w), h: mix(r0.h, r1.h) };
 }
 
+// ---------- the revealed email: a real person's, so it's replaced by a made-up one ----------
+
+/**
+ * Drawn over the panel in recording pixels, so it moves with the camera. `.example` is reserved (RFC 2606) and
+ * can never belong to anyone. clean.mp4 also blurs the real address underneath from the same moment, as a
+ * safety net (see README.md).
+ */
+const FAKE_EMAIL = { text: 'dan@usepylon.example', from: 11.7, to: 14.4, x: 2226, y: 1388, w: 334, h: 64 };
+
+function FakeEmail({ t }: { t: number }) {
+  if (t < FAKE_EMAIL.from || t > FAKE_EMAIL.to) return null;
+  const { x, y, w, h, text } = FAKE_EMAIL;
+  return (
+    <div
+      style={{
+        position: 'absolute', left: x, top: y, width: w, height: h, background: '#fcfcfc', boxShadow: '0 0 6px 4px #fcfcfc',
+        display: 'flex', alignItems: 'center', paddingLeft: 12, fontFamily: sans, fontSize: 28, color: '#26282b',
+        letterSpacing: '0.005em', whiteSpace: 'nowrap',
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
 // ---------- captions: one per moment, in recording time ----------
 
 const CAPTIONS: { from: number; to: number; label: string; text: ReactNode }[] = [
@@ -129,15 +156,20 @@ function Clip({ clip, vertical }: { clip: (typeof CLIPS)[number]; vertical: bool
   return (
     <AbsoluteFill style={{ backgroundColor: NIGHT, opacity: fade }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width, height: height - band, overflow: 'hidden' }}>
-      <OffthreadVideo
-        src={staticFile('clean.mp4')}
-        startFrom={Math.round(clip.from * FPS)}
-        muted
+      <div
         style={{
-          position: 'absolute', left: 0, top: 0, width: SRC.w, height: SRC.h, maxWidth: 'none',
+          position: 'absolute', left: 0, top: 0, width: SRC.w, height: SRC.h,
           transformOrigin: '0 0', transform: `scale(${scale}) translate(${-cam.x}px, ${-cam.y}px)`,
         }}
-      />
+      >
+        <OffthreadVideo
+          src={staticFile('clean.mp4')}
+          startFrom={Math.round(clip.from * FPS)}
+          muted
+          style={{ position: 'absolute', left: 0, top: 0, width: SRC.w, height: SRC.h, maxWidth: 'none' }}
+        />
+        <FakeEmail t={t} />
+      </div>
       </div>
       {caption && <Caption key={caption.label} {...caption} t={t} vertical={vertical} band={band} />}
     </AbsoluteFill>

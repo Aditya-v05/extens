@@ -100,7 +100,7 @@ function Nav() {
   );
 }
 
-// ---------- demo: a real screen recording (usepylon.com), edited in Remotion (video/); the revealed email is blurred ----------
+// ---------- demo: a real screen recording (usepylon.com), edited in Remotion (video/); the revealed email is swapped for a made-up one ----------
 
 function DemoVideo() {
   // Autoplay only when motion is welcome; otherwise show the poster with controls.
