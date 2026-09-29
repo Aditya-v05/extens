@@ -8,7 +8,7 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 - The Vercel project's production domain was renamed in the dashboard from `sift-rosy-omega.vercel.app` to **`sift-through.vercel.app`**. The old address now returns `DEPLOYMENT_NOT_FOUND`.
 - Updated the social-preview and canonical tags (`site/index.html`) and the README link to the new address.
-- The LinkedIn commit (`cbee0ef`) reached GitHub but got no Vercel deployment; this push re-checks the Git auto-deploy.
+- Auto-deploy was delayed, not broken. The Git link was healthy (repo connected, branch `main`, deployments enabled). `b196b0a` deployed about 2 minutes after the push and covers the LinkedIn commit `cbee0ef`, which Vercel skipped as superseded. Verified live: the new `og:url` and the landing FAQ's LinkedIn answer.
 
 ---
 
