@@ -4,6 +4,32 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-30 — Landing page redesign (branch `site-redesign`, preview only)
+
+> "can we make the site atleast a bit better this is super bland lets give it some life … visit multiple yc company landing pages … u can use three js"
+
+- **Research (Playwright):** Resend, Raycast, Supabase, Loops and PostHog. Hero screenshots, whole-page strips, fonts, WebGL/video use, animation counts, and hero motion measured (idle vs. mouse: Raycast 17% / 12%, Resend 4% / 5%). All five have fixed navs.
+  - **Patterns taken:** one moving hero object beside a calm, huge headline (Resend, Raycast); the product big and early (Loops, Raycast); short punchy section heads; a story that ends on the opening promise.
+- **Hero: "sifting", in three.js** (`site/SiftField.tsx`).
+  - A polar-night field: dots fall onto a shimmering dotted sieve. Most flash and scatter; about 1 in 14 passes, turns the mark's teal, and funnels into a stream that lands where the Sift panel opens in the demo below.
+  - The pointer parts the dots.
+  - All motion runs in one vertex shader (61 fps even on headless software GL). It pauses off-screen and in hidden tabs, is static under reduced motion, and is loaded after first paint (page script 11 KB gz; three.js 133 KB gz separately).
+- **Copy:** "Know who's worth talking to." (the user's line), a solid Install button, and "See how it works".
+- **Structure:**
+  - the demo straddling night and day;
+  - **"One click. Four answers."**, a scroll story where the *real* side panel (an iframe, `site/panel.html`) follows the step being read: fit → why now (scrolls to the signals) → who (contacts, email revealed) → LinkedIn ("On this profile");
+  - "And after the click" (My Accounts, Discover, Who to look for);
+  - **costs** as big counting numbers (2 / 0 / 1 / 1);
+  - **privacy** as a diagram (your browser → Apollo and TypeSafe, no Sift server);
+  - FAQ;
+  - a dark closing band with the field again.
+- **Header:** dark over the hero, then light and blurred.
+- **Design note:** this departs on purpose from the extension's all-white, lines-only system (dark bands, a solid pill button) because the user asked for more life. The extension UI is unchanged.
+- **Verified in Playwright:** field renders and moves; header switches; each story step switches the embedded panel (scroll positions 0 / 397 / 537, profile card on LinkedIn); counts reach 2 / 0 / 1 / 1; no errors; no horizontal overflow at 390px; reduced motion is fully still. Slop linter clean on `site/`. Extension tests, tsc and build unaffected.
+- **Fixed during review:** the closing headline was dark-on-dark (base `h2` colour); "TypeSafe" overflowed its circle; the sieve sat behind the paragraph under the headline (narrowed and moved right); "to." widowed (balanced wrap).
+
+---
+
 ## 2026-09-30 — Site address is now sift-through.vercel.app
 
 - The Vercel project's production domain was renamed in the dashboard from `sift-rosy-omega.vercel.app` to **`sift-through.vercel.app`**. The old address now returns `DEPLOYMENT_NOT_FOUND`.

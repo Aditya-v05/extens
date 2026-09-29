@@ -17,5 +17,10 @@ export default defineConfig({
       'wxt/browser': here('./browser-stub.ts'),
     },
   },
-  build: { outDir: here('./dist'), emptyOutDir: true },
+  build: {
+    outDir: here('./dist'),
+    emptyOutDir: true,
+    // The landing page, and the real panel it embeds in the scroll story.
+    rollupOptions: { input: { main: here('./index.html'), panel: here('./panel.html') } },
+  },
 });

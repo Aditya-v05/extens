@@ -1,0 +1,4 @@
+/* Embedded in the landing page: no scrollbar, and the panel's own height, not the window's. */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+.panel { min-height: 0; padding-bottom: 60px; }
