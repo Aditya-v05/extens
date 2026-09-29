@@ -1,0 +1,106 @@
+/*
+ * Landing page. Same system as the extension (styles.css tokens): white, hairlines, Schibsted Grotesk,
+ * no boxes. The one loud element is the demo; everything around it stays quiet.
+ */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.l-page { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+.l-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; border-bottom: 1px solid var(--border); }
+.l-brand { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 600; color: var(--text); text-decoration: none; }
+.l-nav { display: flex; gap: 28px; }
+.l-nav a { color: var(--muted); text-decoration: none; font-size: 14.5px; }
+.l-nav a:hover { color: var(--text); }
+
+.l-hero { padding: 88px 0 56px; max-width: 820px; }
+.l-hero h1 { font-size: clamp(36px, 5.4vw, 60px); line-height: 1.04; font-weight: 450; letter-spacing: -0.035em; }
+.l-lede { font-size: 19px; line-height: 1.55; color: var(--muted); margin: 26px 0 0; max-width: 62ch; }
+.l-lede.small { font-size: 17px; margin-top: 12px; }
+.l-ctas { display: flex; gap: 28px; align-items: baseline; margin-top: 34px; font-size: 17px; }
+.l-ctas a { color: var(--accent); }
+.l-primary { font-weight: 600; text-decoration-thickness: 2px !important; text-decoration-color: currentColor !important; }
+.l-note { font-size: 14px; color: var(--muted); margin-top: 14px; }
+
+/* Demo: a quiet browser mock with the real side panel sliding in. */
+.l-demo { border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); background: var(--surface); }
+.l-chrome { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.l-dots { display: flex; gap: 6px; }
+.l-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); }
+.l-url { flex: 1; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); padding: 2px 0; max-width: 420px; }
+.l-ext { margin-left: auto; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; transition: background 0.3s; }
+.l-ext.on { background: var(--accent-soft); }
+.l-ext.pulse { animation: l-pulse 1.4s ease-in-out infinite; }
+@keyframes l-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+
+.l-viewport { display: flex; height: 620px; overflow: hidden; background: var(--bg); }
+.l-site { flex: 1; min-width: 0; padding: 26px 40px; color: var(--muted); }
+.l-site-nav { display: flex; gap: 22px; font-size: 13px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.l-site-nav strong { color: var(--text); margin-right: 12px; }
+.l-site-hero { padding: 64px 0 40px; max-width: 460px; }
+.l-site-title { font-size: 34px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); font-weight: 450; }
+.l-site-bar { height: 9px; background: var(--border); border-radius: 5px; margin-top: 18px; }
+.l-site-bar.w80 { width: 80%; }
+.l-site-bar.w60 { width: 60%; margin-top: 10px; }
+.l-site-cta { display: inline-block; margin-top: 28px; font-size: 14px; color: var(--text); border-bottom: 2px solid var(--text); padding-bottom: 2px; }
+.l-site-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.l-site-grid div { height: 110px; border-top: 1px solid var(--border); }
+
+.l-panel {
+  width: 0; flex-shrink: 0; overflow: hidden; border-left: 1px solid var(--border-strong); background: var(--bg);
+  transition: width 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.l-panel.open { width: 400px; }
+.l-panel-head { display: flex; align-items: center; gap: 8px; width: 400px; padding: 10px 18px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--border); }
+.l-panel-body { width: 400px; height: calc(100% - 38px); overflow: hidden; }
+.l-panel-body .panel { min-height: 0; }
+@media (prefers-reduced-motion: reduce) { .l-panel, .l-ext { transition: none; animation: none; } }
+
+/* Sections: hairline above, space around, left aligned. */
+.l-section { padding: 72px 0 8px; }
+.l-section h2 { font-size: 30px; font-weight: 500; letter-spacing: -0.02em; }
+.l-section h3 { font-size: 17px; font-weight: 600; }
+.l-section p { font-size: 16.5px; line-height: 1.6; color: #4a4d52; max-width: 62ch; }
+.l-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 32px; }
+.l-cols article { border-top: 2px solid var(--accent); padding-top: 18px; }
+.l-cols article p { margin: 10px 0 0; }
+.l-also { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border); }
+.l-also p { margin: 10px 0 0; }
+
+.l-costs { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 16px; }
+.l-costs th, .l-costs td { text-align: left; padding: 14px 16px 14px 0; border-top: 1px solid var(--border); vertical-align: baseline; }
+.l-costs tr:last-child th, .l-costs tr:last-child td { border-bottom: 1px solid var(--border); }
+.l-costs th { font-weight: 500; width: 34%; }
+.l-costs td:nth-child(2) { font-weight: 600; width: 18%; white-space: nowrap; }
+.l-costs td:last-child { color: var(--muted); }
+
+.l-list { list-style: none; padding: 0; margin: 24px 0 0; max-width: 62ch; }
+.l-list li { font-size: 16.5px; line-height: 1.55; padding: 12px 0; border-top: 1px solid var(--border); }
+.l-list li:last-child { border-bottom: 1px solid var(--border); }
+
+.l-faq { margin-top: 20px; max-width: 72ch; }
+.l-faq details { border-top: 1px solid var(--border); padding: 16px 0; }
+.l-faq details:last-child { border-bottom: 1px solid var(--border); }
+.l-faq summary { cursor: pointer; font-size: 17px; font-weight: 500; list-style: none; }
+.l-faq summary::-webkit-details-marker { display: none; }
+.l-faq summary::after { content: '+'; float: right; color: var(--muted); font-weight: 400; }
+.l-faq details[open] summary::after { content: '–'; }
+.l-faq details p { margin: 10px 0 0; }
+
+.l-end { padding-bottom: 80px; }
+.l-footer { display: flex; justify-content: space-between; padding: 22px 0 40px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+.l-footer-links { display: flex; gap: 24px; }
+
+/* Narrow screens: the demo shows the panel alone, full width. */
+@media (max-width: 820px) {
+  .l-nav { gap: 16px; }
+  .l-nav a:not(:last-child) { display: none; }
+  .l-hero { padding: 56px 0 40px; }
+  .l-ctas { flex-direction: column; gap: 14px; }
+  .l-cols { grid-template-columns: 1fr; gap: 28px; }
+  .l-site { display: none; }
+  .l-panel, .l-panel.open { width: 100%; border-left: none; }
+  .l-panel-head, .l-panel-body { width: 100%; }
+  .l-costs th, .l-costs td { display: block; width: auto; padding: 4px 0; border: none; }
+  .l-costs tr { display: block; padding: 12px 0; border-top: 1px solid var(--border); }
+}

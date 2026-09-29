@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": { "@/*": ["../src/*"] }
+  },
+  // Only the page and what it imports. Type-checked against the real extension types;
+  // vite.config.ts swaps `wxt/browser` for browser-stub.ts at build time.
+  "include": ["./*.ts", "./*.tsx", "../.wxt/wxt.d.ts"],
+  "exclude": ["./dist"]
+}

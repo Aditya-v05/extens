@@ -22,6 +22,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Build the landing page
+        run: npm run site:build
       - name: Install Chromium for the smoke test
         run: npx playwright install --with-deps chromium
       - name: UI smoke test (built extension in Chromium, sample data, no API calls)

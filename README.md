@@ -98,6 +98,9 @@ npm run build && npm run smoke             # loads the built extension in Chromi
 npm run build && npm run store-shots       # regenerates the Chrome Web Store images in store/
 npm run zip                                # packages .output/sift-<version>-chrome.zip for upload
 
+npm run site:dev                           # the landing page (site/), which runs the real side panel with sample data
+npm run site:build                         # builds it to site/dist (what Vercel deploys, see vercel.json)
+
 CI (`.github/workflows/ci.yml`) runs the type-check, unit tests, build and smoke test on every push. It needs no API keys and spends no credits.
 ```
 

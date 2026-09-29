@@ -4,6 +4,35 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
 
 ---
 
+## 2026-09-29 — Landing page (Vercel)
+
+> "lets host in vercel - yes install form guithub with coming soon - i think a looping animatio maybe"
+
+- **`site/`:** a one-page site, built with Vite and deployed by Vercel (`vercel.json`: `npm run site:build` → `site/dist`).
+- **The demo is the real side panel.** `site/vite.config.ts` swaps `wxt/browser` for `site/browser-stub.ts` (in-memory storage with change events, no-op messaging), so the extension's own `App` renders on a normal page.
+  - `Demo.tsx` loops through a lookup: the icon pulses, the panel slides in, then company, fit (while why-now is still loading), why now, and contacts. It scrolls to the contacts, reveals an email, closes, and repeats.
+  - It pauses while the tab is hidden, and shows the finished state with no motion when reduced motion is on.
+  - The demo can't drift from the product because it *is* the product.
+- **Demo data is fictional:** "Acme" at `acme.example` (a reserved domain) with made-up people. The fit score is computed by Sift's own `combineFit`: 4 of 4 met, overall 78 → 90.
+- **Page:**
+  - hero with *Install from GitHub*, *Read the source*, and "Chrome Web Store: coming soon";
+  - what the panel answers (fit, why now, who), and what comes after the click (My Accounts, Discover);
+  - "It costs what it says" (the credit table);
+  - "Your keys, your browser";
+  - FAQ, including honest "not yet" answers for LinkedIn and phone numbers.
+  - Same design system as the extension, no emoji, lines only; stacks on phones with no horizontal scroll.
+- **Assets:** a social image (`site/public/og.png`, 1200×630, rendered from the page) and a favicon. Icons are imported rather than copied, so the extension zip didn't grow.
+- **Tooling:** `npm run site:dev` / `site:build`; `compile` also type-checks the site (against the real extension types). CI builds the site too.
+- **Bug fixed in the extension, found by the demo:** the side panel read its state *then* subscribed to changes, so a change landing in between was lost. In the extension, a background write at that moment would leave the panel stale until the next update. It now subscribes first and only uses the initial read if nothing arrived meanwhile.
+- **Rejected:** `@vercel/config` (for a `vercel.ts`) brought 3 high-severity advisories through `path-to-regexp`, with only an old-version downgrade as a fix. A plain `vercel.json` needs no dependency; still 0 vulnerabilities.
+- **Verified:**
+  - desktop and 390px phone screenshots, six animation frames reviewed, no console errors, no horizontal overflow;
+  - reduced-motion mode shows the finished panel;
+  - extension unit tests, tsc (extension and site), build, and smoke still pass.
+- **Not yet deployed:** Vercel needs the user's login or a one-time import of the GitHub repo.
+
+---
+
 ## 2026-09-29 — Ready to share: CI, store kit, shortcut, v0.2.0
 
 - **Phones are parked.** The user's Apollo account has 0 of 2,500 direct-dial (phone) credits left this cycle, and phone reveals need a webhook relay, i.e. a backend.

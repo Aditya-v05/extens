@@ -25,8 +25,14 @@ export default function App() {
     browser.windows.getCurrent().then(async (w) => {
       const id = w.id!;
       setWindowId(id);
-      setView(await store.getView(id));
-      off = store.onViewChange(id, setView);
+      // Listen before reading, so a change landing between the two isn't missed.
+      let changed = false;
+      off = store.onViewChange(id, (v) => {
+        changed = true;
+        setView(v);
+      });
+      const current = await store.getView(id);
+      if (!changed) setView(current);
     });
     return () => off();
   }, []);
