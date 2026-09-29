@@ -4,6 +4,8 @@
 
 [![CI](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml/badge.svg)](https://github.com/Aditya-v05/extens/actions/workflows/ci.yml)
 
+**Website:** https://sift-rosy-omega.vercel.app
+
 An open-source Chrome extension for anyone doing outbound. Open a company's website, click the icon (or press **Alt+Shift+S**, ⌥⇧S on a Mac), and a side panel tells you:
 
 1. **Does this company fit my ICP?** A fit score driven mostly by your own requirements (met / near miss / unsure / not met), with Jev's overall judgment as a smaller part.

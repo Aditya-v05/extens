@@ -29,7 +29,7 @@ Newest first. Each entry covers what changed, why, and how it was verified. Desi
   - desktop and 390px phone screenshots, six animation frames reviewed, no console errors, no horizontal overflow;
   - reduced-motion mode shows the finished panel;
   - extension unit tests, tsc (extension and site), build, and smoke still pass.
-- **Not yet deployed:** Vercel needs the user's login or a one-time import of the GitHub repo.
+- **Deployed** to https://sift-rosy-omega.vercel.app (Vercel project `sift`), after the user ran `npx vercel login`. The CLI was asked for a preview, but Vercel sends a project's first deployment to production. The social image and canonical links now use the full URL.
 
 ---
 
